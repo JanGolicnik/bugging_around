@@ -1,0 +1,7 @@
+﻿build
+build_old
+
+.gdb_history
+.clangd
+build/
+.cache/

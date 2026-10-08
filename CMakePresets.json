@@ -1,0 +1,56 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "common",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
+      }
+    },
+    {
+      "name": "native",
+      "hidden": true,
+      "inherits": "common",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "WEBGPU_BACKEND": "DAWN",
+        "WEBGPU_BUILD_FROM_SOURCE": "ON",
+        "DAWN_USE_WAYLAND": "ON",
+        "DAWN_USE_X11": "OFF",
+        "SDL_X11": "OFF"
+      }
+    },
+    {
+      "name": "web",
+      "hidden": true,
+      "inherits": "common",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "cacheVariables": {
+        "CGLM_SHARED": "OFF",
+        "CGLM_STATIC": "ON",
+        "CMAKE_EXECUTABLE_SUFFIX": ".html"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "$env{EMSDK}",
+        "rhs": ""
+      }
+    },
+
+    { "name": "debug",       "inherits": "native", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "release",     "inherits": "native", "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
+    { "name": "web-debug",   "inherits": "web",    "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "web-release", "inherits": "web",    "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } }
+  ],
+  "buildPresets": [
+    { "name": "debug",       "configurePreset": "debug" },
+    { "name": "release",     "configurePreset": "release" },
+    { "name": "web-debug",   "configurePreset": "web-debug" },
+    { "name": "web-release", "configurePreset": "web-release" }
+  ]
+}

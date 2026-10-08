@@ -1,0 +1,2 @@
+cmake --build --preset debug
+ln -sf build/debug/compile_commands.json compile_commands.json
