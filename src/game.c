@@ -92,8 +92,7 @@ void game_update(void)
     }
     game.prev_time = time;
 
-    RIPPLE(FORM(.width = PERCENT(1.0f, RippleSizingValueType_Child), .height = PERCENT(1.0f, RippleSizingValueType_Child)),
-        RECTANGLE(.color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f))
+    RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
     {
         text(str("hello everynyan"));
         text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
