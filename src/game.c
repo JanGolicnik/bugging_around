@@ -1,4 +1,3 @@
-#include "SDL3/SDL_init.h"
 #define FLOS_GAME
 #include "base.c"
 
@@ -24,6 +23,13 @@ static struct {
     f32 avg_fps;
 } game;
 
+static void on_reni_init(Reni* reni, void* _)
+{
+    game.surface = reni_create_surface(reni, (ReniSurfaceConfig){ .window = game.window });
+    game.ripple = ripple_initialize((RippleBackendRendererConfig){ .reni = reni });
+    ripple_make_active_context(&game.ripple);
+}
+
 static void on_reni_error(str msg)
 {
     mrw_abort("wgpu error: {}", msg);
@@ -47,6 +53,7 @@ bool game_init(void)
     game.reni = reni_create_reni((ReniConfig){
         .allocator = game.mem.stable,
         .frame_allocator = game.mem.frame,
+        .init_callback = on_reni_init,
         .error_callback = on_reni_error,
     });
 
@@ -71,28 +78,8 @@ SDL_AppResult game_on_event(SDL_Event* event)
     return SDL_APP_CONTINUE;
 }
 
-void game_tick(void)
+void game_update(void)
 {
-    if (game.in_background || !reni_is_ready(game.reni)) return;
-
-    if (!game.surface.h.valid)
-    {
-        game.surface = reni_create_surface(game.reni, (ReniSurfaceConfig){ .window = game.window });
-
-        if (!game.ripple.initialized)
-        {
-            game.ripple = ripple_initialize((RippleBackendRendererConfig){
-                .reni = game.reni,
-                .surface_format = reni_surface_get_format(game.reni, game.surface)
-            });
-            ripple_make_active_context(&game.ripple);
-        }
-    }
-
-    int w, h;
-    SDL_GetWindowSizeInPixels(game.window, &w, &h);
-    reni_surface_update(game.reni, game.surface, (ReniSurfaceState){ .width = (u32)w, .height = (u32)h });
-
     f32 time = (f32)SDL_GetTicksNS() / 1000000000.0f;
     game.dt = time - game.prev_time;
     game.dt_accum += game.dt;
@@ -111,21 +98,40 @@ void game_tick(void)
         text(str("hello everynyan"));
         text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
     }
+}
+
+void game_render(void)
+{
+    i32 w, h;
+    SDL_GetWindowSizeInPixels(game.window, &w, &h);
+    ReniTexture target = reni_surface_acquire(game.reni, game.surface, (ReniSurfaceState){ .width = (u32)w, .height = (u32)h });
+    if (!target.h.valid) return;
 
     reni_begin(game.reni);
 
-    ReniTexture target = reni_surface_acquire(game.reni, game.surface);
-    if (target.h.valid) {
-        ReniRenderpass pass = reni_create_renderpass(game.reni, (ReniRenderpassConfig){
-            .name = str("clear"),
-            .targets = { { .texture = target, .clear = true, .clear_value = { 0.1, 0.3, 0.6, 1.0 } } },
-        });
-        reni_submit_renderpass(game.reni, pass);
-    }
+    reni_submit_renderpass(game.reni, reni_create_renderpass(game.reni, (ReniRenderpassConfig){
+        .name = str("clear"),
+        .targets = { { .texture = target, .clear = true, .clear_value = { 0.1, 0.3, 0.6, 1.0 } } },
+    }));
 
     ripple_submit(&game.ripple, w, h, (RippleRenderData) { .reni = game.reni, .surface = target });
 
     reni_end(game.reni);
+}
+
+void game_tick(void)
+{
+    if (game.in_background || !reni_is_ready(game.reni)) return;
+
+    game_update();
+
+    game_render();
 
     mrw_bump_reset(&game.mem._frame);
+}
+
+void game_quit(void)
+{
+    if (game.surface.h.valid) reni_release_surface(game.reni, game.surface);
+    SDL_DestroyWindow(game.window);
 }

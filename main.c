@@ -20,6 +20,5 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
-    if (game.surface.h.valid) reni_release_surface(game.reni, game.surface);
-    SDL_DestroyWindow(game.window);
+    game_quit();
 }
