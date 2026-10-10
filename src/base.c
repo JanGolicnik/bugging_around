@@ -1,5 +1,5 @@
-#ifndef FLOS_BASE
-#define FLOS_BASE
+#ifndef BUGGIN_BASE
+#define BUGGIN_BASE
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -16,13 +16,21 @@
 #include <ripple/ripple.h>
 #include <ripple/ripple_widgets.h>
 
-#ifndef FLOS_RENDERER
-#include "renderer.c"
+#ifndef BUGGIN_ENTITY
+#include "entity.c"
 
-#ifndef FLOS_GAME
+#ifndef BUGGIN_SCENE
+#include "scene.c"
+
+#ifndef BUGGIN_DRAW
+#include "draw.c"
+
+#ifndef BUGGIN_GAME
 #include "game.c"
 
 #endif
 #endif
+#endif
+#endif
 
-#endif // FLOS_BASE
+#endif // BUGGIN_BASE

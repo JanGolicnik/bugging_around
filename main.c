@@ -20,5 +20,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
-    game_quit();
+    draw_destroy();
+    game_destroy();
 }
