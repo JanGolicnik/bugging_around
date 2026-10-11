@@ -4,13 +4,18 @@
 typedef enum {
     CT_Transform = BIT(0),
     CT_IsHidden = BIT(1),
-    CT_Mesh = BIT(2),
+    CT_Sprite = BIT(2),
     CT_Physics = BIT(3),
 } ComponentType;
 
 typedef struct Scene Scene;
 
 typedef GenarrHandle EntityHandle;
+
+STRUCT(TransformC)
+{
+    f32 x, y, w, h;
+};
 
 STRUCT(Entity) {
     str name;
@@ -19,9 +24,7 @@ STRUCT(Entity) {
 
     ComponentType components;
 
-    struct TransformC {
-        f32 x, y, rot, w, h;
-    } transform;
+    TransformC transform;
 
     struct SpriteC {
         u32 sprite;

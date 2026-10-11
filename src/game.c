@@ -38,8 +38,6 @@ bool game_init(void)
     game.scene = game_new_scene();
     scene_create_entity(game.scene, CT_Transform, .name = str("gospod1"), .transform.x = 100.0f, .transform.y = 200.0f);
     scene_create_entity(game.scene, CT_Transform, .name = str("gospod2"), .transform.x = 200.0f, .transform.y = 200.0f);
-    scene_create_entity(game.scene, CT_Transform, .name = str("gospod3"), .transform.x = 300.0f, .transform.y = 200.0f);
-    scene_create_entity(game.scene, CT_Transform, .name = str("gospod4"), .transform.x = 400.0f, .transform.y = 200.0f);
 
     return draw_init(game.mem.stable, game.mem.frame);
 }
