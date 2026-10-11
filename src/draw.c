@@ -16,6 +16,7 @@ typedef GenarrHandle SpriteHandle;
 
 struct {
     SDL_Window* window;
+    i32 width, height;
     Reni* reni;
     ReniSurface surface;
     RippleContext ripple;
@@ -29,8 +30,8 @@ struct {
         ReniBinding binding;
         ReniBuffer buffer;
         struct {
-            f32 time;
             f32 width, height;
+            f32 time;
         } data;
     } shader_data;
 
@@ -124,7 +125,7 @@ bool draw_init(Allocator* stable, Allocator* frame)
     flags |= SDL_WINDOW_METAL;
 #endif
     draw.window = SDL_CreateWindow("buggin around", 1280, 720, flags);
-    if (!draw.window) return false;
+    if (!draw.window)  mrw_abort("failed to create window");
 
     draw.reni = reni_create_reni((ReniConfig){
         .allocator = stable,
@@ -139,23 +140,31 @@ bool draw_init(Allocator* stable, Allocator* frame)
     return true;
 }
 
-void draw_scene(Scene* scene)
+void draw_scene(Scene* scene, f32 time)
 {
     if (!draw.surface.h.valid)
     {
         draw.surface = reni_create_surface(draw.reni, (ReniSurfaceConfig){ .window = draw.window });
     }
 
-    i32 w, h;
-    SDL_GetWindowSizeInPixels(draw.window, &w, &h);
-    ReniTexture target = reni_surface_acquire(draw.reni, draw.surface, (ReniSurfaceState){ .width = (u32)w, .height = (u32)h });
+    SDL_GetWindowSizeInPixels(draw.window, &draw.width, &draw.height);
+    ReniTexture target = reni_surface_acquire(draw.reni, draw.surface, (ReniSurfaceState){ .width = (u32)draw.width, .height = (u32)draw.height });
     if (!target.h.valid) return;
+
+    draw.shader_data.data.width = (f32)draw.width;
+    draw.shader_data.data.height = (f32)draw.height;
+    draw.shader_data.data.time = time;
+    reni_buffer_write(draw.reni, draw.shader_data.buffer, slice_u8_one(&draw.shader_data.data), 0);
 
     reni_begin(draw.reni);
 
     ReniRenderpass pass = reni_create_renderpass(draw.reni, (ReniRenderpassConfig){
-        .name = str("clear"),
-        .targets = { { .texture = target, .clear = true, .clear_value = { 0.1, 0.3, 0.6, 1.0 } } },
+        .name = str("sprite pass"),
+        .targets[0] = {
+            .texture = target,
+            .clear = true,
+            .clear_value = { 0.1, 0.3, 0.6, 1.0 }
+        },
     });
 
     { // draw sprites and shit
@@ -169,18 +178,19 @@ void draw_scene(Scene* scene)
         reni_renderpass_set_binding(draw.reni, pass, 0, draw.shader_data.binding);
         reni_renderpass_draw(draw.reni, pass, (ReniDrawConfig) {
             .n_vertices = 6,
-            .instances = draw.instance_buffer
+            .n_instances = draw.instances.n_items,
+            .vertices = draw.instance_buffer
         });
     }
 
     reni_submit_renderpass(draw.reni, pass);
-    ripple_submit(&draw.ripple, w, h, (RippleRenderData) { .reni = draw.reni, .surface = target });
+    ripple_submit(&draw.ripple, draw.width, draw.height, (RippleRenderData) { .reni = draw.reni, .surface = target });
     reni_end(draw.reni);
 }
 
 bool draw_is_ready(void)
 {
-    return reni_is_ready(draw.reni);
+    return draw.reni && reni_is_ready(draw.reni);
 }
 
 void draw_destroy(void)

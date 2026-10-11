@@ -10,7 +10,7 @@ struct {
         Allocator* stable;
     } mem;
 
-    f32 prev_time;
+    f32 time;
     f32 dt;
     f32 dt_accum;
     u32 dt_n_samples;
@@ -19,6 +19,8 @@ struct {
 
     VEKTOR(Scene*) scenes;
     Scene* scene;
+
+    EntityHandle entity_guy;
 } game;
 
 Scene* game_new_scene(void) {
@@ -36,8 +38,9 @@ bool game_init(void)
     game.mem.frame = (Allocator*)&game.mem._frame;
 
     game.scene = game_new_scene();
-    scene_create_entity(game.scene, CT_Transform, .name = str("gospod1"), .transform.x = 100.0f, .transform.y = 200.0f);
-    scene_create_entity(game.scene, CT_Transform, .name = str("gospod2"), .transform.x = 200.0f, .transform.y = 200.0f);
+    game.entity_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod1"),
+        .transform = { .x = 110.0f, .y = 200.0f, .w = 100.0f, .h = 50.0f },
+    );
 
     return draw_init(game.mem.stable, game.mem.frame);
 }
@@ -45,7 +48,7 @@ bool game_init(void)
 void game_update(void)
 {
     f32 time = (f32)SDL_GetTicksNS() / 1000000000.0f;
-    game.dt = time - game.prev_time;
+    game.dt = time - game.time;
     game.dt_accum += game.dt;
     game.dt_n_samples += 1;
     if (game.dt_accum > 1.0f) {
@@ -54,18 +57,22 @@ void game_update(void)
         game.dt_n_samples = 0;
         mrw_debug_val(game.avg_fps);
     }
-    game.prev_time = time;
+    game.time = time;
 
     RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
     {
         text(str("hello everynyan"));
         text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
 
+        Entity* guy = scene_get_entity(game.scene, game.entity_guy);
+        guy->transform.x = draw.width * 0.5 + sin(game.time) * 100.0f;
+        guy->transform.y = draw.height * 0.5;
+
         EntityIter iter = { .include = CT_Transform };
         while(scene_next_entity(game.scene, &iter))
         {
             text(mrw_format("entity {} exists", game.mem.frame, iter.entity->name));
-            text(mrw_format("at {} {}", game.mem.frame, iter.entity->transform.x, iter.entity->transform.y));
+            text(mrw_format("at {.1f} {.1f}", game.mem.frame, iter.entity->transform.x, iter.entity->transform.y));
         }
     }
 }
@@ -78,7 +85,7 @@ void game_tick(void)
 
     game_update();
 
-    draw_scene(game.scene);
+    draw_scene(game.scene, game.time);
 }
 
 void game_destroy(void)

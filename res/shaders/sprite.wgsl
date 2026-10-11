@@ -1,13 +1,13 @@
 struct ShaderData {
-    time: f32
     resolution: vec2f,
+    time: f32,
 }
 
 @group(0) @binding(0) var<uniform> shader_data: ShaderData;
 
 struct InstanceInput {
-    @location(1) position: vec2f,
-    @location(2) size: vec2f,
+    @location(0) position: vec2f,
+    @location(1) size: vec2f,
 }
 
 struct VertexOutput{
@@ -23,7 +23,8 @@ fn vs_main(@builtin(vertex_index) index : u32, i: InstanceInput) -> VertexOutput
     position = position / resolution;
     position = vec2f(position.x, 1.0f - position.y) * 2.0f - vec2<f32>(1.0f, 1.0f);
     var out: VertexOutput;
-    out.uv = vec2(select(i.uv.x, i.uv.z, p.x > 0.5), select(i.uv.y, i.uv.w, p.y > 0.5));
+    out.position = vec4(position, 0.0, 1.0);
+    out.uv = vec2(p.x, p.y) * 0.5f + 0.5f;
     return out;
 }
 

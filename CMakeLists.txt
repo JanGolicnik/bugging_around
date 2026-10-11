@@ -89,7 +89,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_copy_webgpu_binaries(${PROJECT_NAME})
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
         "${CMAKE_CURRENT_SOURCE_DIR}/res"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
 )
