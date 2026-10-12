@@ -1,7 +1,10 @@
+#include <unistd.h>
 #include "src/base.c"
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
+    const char* base = SDL_GetBasePath();
+    if (base && chdir(base) != 0) mrw_debug("change base dir failed");
     bool success = true;
     if (success) success |= game_init();
     return success ? SDL_APP_CONTINUE : SDL_APP_FAILURE;

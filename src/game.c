@@ -100,7 +100,8 @@ SDL_AppResult game_on_event(SDL_Event* event)
             return SDL_APP_SUCCESS;
         case SDL_EVENT_WILL_ENTER_BACKGROUND:
             game.in_background = true;
-            reni_release_surface(draw.reni, draw.surface);
+            if (draw.surface.h.valid)
+                reni_release_surface(draw.reni, draw.surface);
             draw.surface = (ReniSurface){ 0 };
             break;
         case SDL_EVENT_DID_ENTER_FOREGROUND:

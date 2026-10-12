@@ -57,6 +57,22 @@ set(SOURCES main.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		MACOSX_BUNDLE TRUE
+		MACOSX_BUNDLE_GUI_IDENTIFIER "com.jangolicnik.buggin"
+		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.jangolicnik.buggin"
+		MACOSX_BUNDLE_BUNDLE_NAME "buggin"
+		MACOSX_BUNDLE_BUNDLE_VERSION "1"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+		XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+		XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+		XCODE_EMBED_FRAMEWORKS webgpu_dawn
+		XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
+		XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks"
+	)
+endif()
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
@@ -86,10 +102,15 @@ target_compile_options(${PROJECT_NAME} PRIVATE
   -Wno-gnu-zero-variadic-macro-arguments
 )
 
+if(APPLE)
+	target_compile_options(${PROJECT_NAME} PRIVATE -Wno-conversion -Wno-gnu-folding-constant)
+endif()
+
 target_copy_webgpu_binaries(${PROJECT_NAME})
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/res"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
 )
