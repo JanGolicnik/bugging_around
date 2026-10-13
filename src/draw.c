@@ -1,3 +1,4 @@
+#include "atlas.h"
 #include "marrow/vektor.h"
 #include "reni/reni.h"
 #define BUGGIN_DRAW
@@ -36,10 +37,16 @@ struct {
     } shader_data;
 
     ReniShader shader;
+
+    struct {
+        Allocator* frame;
+        Allocator* stable;
+    } _mem;
 } draw;
 
 SpriteHandle create_sprite(str path)
 {
+    mrw_unused sprites[SPRITE_S1].x;
     return (SpriteHandle){ 0 };
 }
 
@@ -98,7 +105,7 @@ void draw_init_shaders(void)
     });
 }
 
-static void on_reni_init(Reni* reni, void* stable)
+static void on_reni_init(Reni* reni, void* _)
 {
     draw.reni = reni;
     draw.surface = reni_create_surface(draw.reni, (ReniSurfaceConfig){ .window = draw.window });
@@ -107,7 +114,7 @@ static void on_reni_init(Reni* reni, void* stable)
 
     draw.instance_buffer = reni_create_buffer(draw.reni, (ReniBufferConfig) {  .usage = ReniBufferUsage_CopyDst | ReniBufferUsage_Vertex }),
 
-    draw.ripple = ripple_initialize(stable, (RippleBackendRendererConfig){ .reni = draw.reni });
+    draw.ripple = ripple_initialize(draw._mem.frame, draw._mem.stable, (RippleBackendRendererConfig){ .reni = draw.reni });
     ripple_make_active_context(&draw.ripple);
 }
 
@@ -131,7 +138,7 @@ bool draw_init(Allocator* stable, Allocator* frame)
         .allocator = stable,
         .frame_allocator = frame,
         .init_callback = on_reni_init,
-        .init_callback_data = stable,
+        .init_callback_data = nullptr,
         .error_callback = on_reni_error,
     });
 

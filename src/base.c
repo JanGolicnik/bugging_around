@@ -16,6 +16,8 @@
 #include <ripple/ripple.h>
 #include <ripple/ripple_widgets.h>
 
+#include "atlas.h"
+
 #ifndef BUGGIN_ENTITY
 #include "entity.c"
 

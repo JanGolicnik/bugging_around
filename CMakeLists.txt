@@ -23,68 +23,52 @@ set(SDL_STATIC ON CACHE BOOL "" FORCE)
 set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 
 foreach(dep IN LISTS THIRD_PARTY_DEPS)
-    string(TOUPPER "${dep}" dep_upper)
-    set("${dep_upper}_SOURCE_DIR" CACHE PATH "local path to ${dep}")
+  string(TOUPPER "${dep}" dep_upper)
+  set("${dep_upper}_SOURCE_DIR" CACHE PATH "local path to ${dep}")
 endforeach()
 
 set(WEBGPU_BUILD_FROM_SOURCE TRUE)
 
 foreach(dep IN LISTS THIRD_PARTY_DEPS)
-    string(TOUPPER "${dep}" dep_upper)
+  string(TOUPPER "${dep}" dep_upper)
 
-    if(${dep_upper}_SOURCE_DIR)
-        message(STATUS "Local ${${dep_upper}_SOURCE_DIR}")
-        FetchContent_Declare(
-            ${dep}
-            SOURCE_DIR "${${dep_upper}_SOURCE_DIR}"
-        )
-    else()
-        message(STATUS "Fetch ${FETCH_${dep_upper}_REPO} ${FETCH_${dep_upper}_TAG}")
-        FetchContent_Declare(
-            ${dep}
-            GIT_REPOSITORY "${FETCH_${dep_upper}_REPO}"
-            GIT_TAG        "${FETCH_${dep_upper}_TAG}"
-            GIT_SHALLOW    TRUE
-        )
-    endif()
+  if(${dep_upper}_SOURCE_DIR)
+    message(STATUS "Local ${${dep_upper}_SOURCE_DIR}")
+    FetchContent_Declare(
+        ${dep}
+        SOURCE_DIR "${${dep_upper}_SOURCE_DIR}"
+    )
+  else()
+    message(STATUS "Fetch ${FETCH_${dep_upper}_REPO} ${FETCH_${dep_upper}_TAG}")
+    FetchContent_Declare(
+        ${dep}
+        GIT_REPOSITORY "${FETCH_${dep_upper}_REPO}"
+        GIT_TAG        "${FETCH_${dep_upper}_TAG}"
+        GIT_SHALLOW    TRUE
+    )
+  endif()
 endforeach()
 
 FetchContent_MakeAvailable(${THIRD_PARTY_DEPS})
 
 add_subdirectory(webgpu)
+add_subdirectory(tools/atlas)
 
 set(SOURCES main.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		MACOSX_BUNDLE TRUE
-		MACOSX_BUNDLE_GUI_IDENTIFIER "com.jangolicnik.buggin"
-		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.jangolicnik.buggin"
-		MACOSX_BUNDLE_BUNDLE_NAME "buggin"
-		MACOSX_BUNDLE_BUNDLE_VERSION "1"
-		MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
-		XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-		XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-		XCODE_EMBED_FRAMEWORKS webgpu_dawn
-		XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
-		XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks"
-	)
-endif()
-
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-        ${CMAKE_SOURCE_DIR}/include
+target_include_directories(${PROJECT_NAME} PUBLIC
+  ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        marrow
-        printccy
-        ripple
-        webgpu
-        SDL3::SDL3
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  marrow
+  printccy
+  ripple
+  webgpu
+  SDL3::SDL3
+  atlas
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -103,14 +87,39 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 )
 
 if(APPLE)
-	target_compile_options(${PROJECT_NAME} PRIVATE -Wno-conversion -Wno-gnu-folding-constant)
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+		MACOSX_BUNDLE TRUE
+		MACOSX_BUNDLE_GUI_IDENTIFIER "com.jangolicnik.buggin"
+		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.jangolicnik.buggin"
+		MACOSX_BUNDLE_BUNDLE_NAME "buggin"
+		MACOSX_BUNDLE_BUNDLE_VERSION "1"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+		XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+		XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+		XCODE_EMBED_FRAMEWORKS webgpu_dawn
+		XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
+		XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks"
+	)
+	target_compile_options(${PROJECT_NAME} PRIVATE
+  	-Wno-conversion
+  	-Wno-gnu-folding-constant
+	)
 endif()
 
 target_copy_webgpu_binaries(${PROJECT_NAME})
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -rf "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/res"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+  rm -rf "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
 )
+
+if(APPLE)
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+  copy_directory
+  "${CMAKE_CURRENT_SOURCE_DIR}/res" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
+)
+else()
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+  create_symlink
+  "${CMAKE_CURRENT_SOURCE_DIR}/res" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/res"
+)
+endif()
