@@ -1,3 +1,4 @@
+#include "atlas.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -21,6 +22,7 @@ struct {
     Scene* scene;
 
     EntityHandle entity_guy;
+    EntityHandle other_guy;
 } game;
 
 Scene* game_new_scene(void) {
@@ -39,7 +41,12 @@ bool game_init(void)
 
     game.scene = game_new_scene();
     game.entity_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod1"),
-        .transform = { .x = 110.0f, .y = 200.0f, .w = 100.0f, .h = 50.0f },
+        .transform = { .w = 100.0f, .h = 50.0f },
+        .sprite = SPRITE_S1
+    );
+    game.other_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod2"),
+        .transform = { .w = 50.0f, .h = 100.0f },
+        .sprite = SPRITE_S2
     );
 
     return draw_init(game.mem.stable, game.mem.frame);
@@ -67,6 +74,10 @@ void game_update(void)
         Entity* guy = scene_get_entity(game.scene, game.entity_guy);
         guy->transform.x = draw.width * 0.5 + sin(game.time) * 100.0f;
         guy->transform.y = draw.height * 0.5;
+
+        Entity* other_guy = scene_get_entity(game.scene, game.other_guy);
+        other_guy->transform.x = draw.width * 0.5 + sin(game.time * 4.0f) * 100.0f;
+        other_guy->transform.y = draw.height * 0.3;
 
         EntityIter iter = { .include = CT_Transform };
         while(scene_next_entity(game.scene, &iter))

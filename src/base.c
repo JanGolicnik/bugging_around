@@ -16,6 +16,15 @@
 #include <ripple/ripple.h>
 #include <ripple/ripple_widgets.h>
 
+static u8Slice read_file(cstr path, Allocator* a) {
+    FILE* f = fopen(path, "rb");
+    fseek(f, 0, SEEK_END); long n = ftell(f);
+    rewind(f); u8* buf = mrw_alloc_n(a, u8, n + 1);
+    fread(buf, 1, (size_t)n, f);
+    fclose(f); buf[n] = 0;
+    return (u8Slice)slice_to(buf, n);
+}
+
 #include "atlas.h"
 
 #ifndef BUGGIN_ENTITY

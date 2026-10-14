@@ -1,8 +1,11 @@
-#include "atlas.h"
-#include "marrow/vektor.h"
+#include "marrow/marrow.h"
 #include "reni/reni.h"
 #define BUGGIN_DRAW
 #include "base.c"
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#include <stb_image.h>
 
 cstr common_includes[] = {
     "./res/shaders/common.wgsl"
@@ -11,6 +14,13 @@ cstr common_includes[] = {
 STRUCT(Sprite)
 {
     u32 index;
+};
+
+STRUCT(Instance)
+{
+    f32 x, y;
+    f32 w, h;
+    SpriteId sprite;
 };
 
 typedef GenarrHandle SpriteHandle;
@@ -23,7 +33,7 @@ struct {
     RippleContext ripple;
 
     GENARR(Sprite) sprites;
-    VEKTOR(TransformC) instances;
+    VEKTOR(Instance) instances;
     ReniBuffer instance_buffer;
 
     struct {
@@ -36,6 +46,14 @@ struct {
         } data;
     } shader_data;
 
+    struct {
+        ReniTexture tex;
+        ReniSampler sampler;
+        ReniBuffer sprites_buffer;
+        ReniBindingLayout layout;
+        ReniBinding binding;
+    } atlas;
+
     ReniShader shader;
 
     struct {
@@ -44,10 +62,69 @@ struct {
     } _mem;
 } draw;
 
-SpriteHandle create_sprite(str path)
+STRUCT(GPUSprite) {
+    f32 u0, v0, u1, v1;
+};
+
+void draw_load_sprites(void)
 {
-    mrw_unused sprites[SPRITE_S1].x;
-    return (SpriteHandle){ 0 };
+    cstr path = "./res/atlas/atlas_0.png";
+    u8Slice buf = read_file(path, draw._mem.frame);
+    i32 w, h, c;
+    stbi_uc* img = stbi_load_from_memory(buf.start, slice_size(buf), &w, &h, &c, 4);
+    draw.atlas.tex = reni_create_texture(draw.reni, (ReniTextureConfig){
+        .name = str(path),
+        .width = w,
+        .height = h,
+        .format = ReniTextureFormat_RGBA8UnormSrgb,
+        .usage = ReniTextureUsage_CopyDst | ReniTextureUsage_TextureBinding
+    });
+    reni_texture_write(draw.reni, draw.atlas.tex, (u8Slice)slice_to((u8*)img, w * h * c));
+    stbi_image_free(img);
+
+    draw.atlas.layout = reni_create_binding_layout(draw.reni, (ReniBindingLayoutConfig) {
+        .entries[0] = {
+            .visibility = ReniShaderStage_Fragment,
+            .sampler.type = ReniSamplerType_Filtering,
+        },
+        .entries[1] = {
+            .visibility = ReniShaderStage_Fragment,
+            .texture.type = ReniSampleType_Float,
+        },
+        .entries[2] = {
+            .visibility = ReniShaderStage_Vertex,
+            .buffer.type = ReniBufferBindingType_ReadOnlyStorage,
+        }
+    });
+
+    draw.atlas.sampler = reni_create_sampler(draw.reni, (ReniSamplerConfig){
+        .name = str("atlas sampler"),
+        .address = ReniSamplerAddressMode_ClampToEdge,
+        .filter = ReniSamplerFilterMode_Linear
+    });
+
+    GPUSprite sprites_buffer[SPRITE_COUNT] = { 0 };
+    for (u32 i = 0; i < SPRITE_COUNT; i++)
+        sprites_buffer[i] = (GPUSprite){
+            .u0 = sprites[i].u0,
+            .v0 = sprites[i].v0,
+            .u1 = sprites[i].u1,
+            .v1 = sprites[i].v1
+        };
+
+    draw.atlas.sprites_buffer = reni_create_buffer(draw.reni, (ReniBufferConfig){
+        .name = str("sprites buffer"),
+        .usage = ReniBufferUsage_CopyDst | ReniBufferUsage_Storage,
+        .data = slice_to((u8*)sprites_buffer, sizeof(sprites_buffer))
+    });
+
+    draw.atlas.binding = reni_create_binding(draw.reni, (ReniBindingConfig) {
+        .name = sstr("atlas bind group"),
+        .layout = draw.atlas.layout,
+        .entries[0].sampler = draw.atlas.sampler,
+        .entries[1].texture = draw.atlas.tex,
+        .entries[2].buffer.buffer = draw.atlas.sprites_buffer,
+    });
 }
 
 void draw_init_shaders(void)
@@ -74,21 +151,26 @@ void draw_init_shaders(void)
             .path = "./res/shaders/sprite.wgsl",
             .includes = array_slice(common_includes)
         },
-        .layouts[0] = draw.shader_data.layout,
+        .layouts = { draw.shader_data.layout, draw.atlas.layout },
         .vertex = {
             .entry = sstr("vs_main"),
             .buffers[0] = {
                 .instance = true,
-                .stride = sizeof(TransformC),
+                .stride = sizeof(Instance),
                 .attributes[0] = {
                     .location = 0,
-                    .offset = offsetof(TransformC, x),
+                    .offset = offsetof(Instance, x),
                     .format = ReniVertexFormat_Float32x2,
                 },
                 .attributes[1] = {
                     .location = 1,
-                    .offset = offsetof(TransformC, w),
+                    .offset = offsetof(Instance, w),
                     .format = ReniVertexFormat_Float32x2,
+                },
+                .attributes[2] = {
+                    .location = 2,
+                    .offset = offsetof(Instance, sprite),
+                    .format = ReniVertexFormat_Uint32,
                 }
             },
         },
@@ -110,6 +192,7 @@ static void on_reni_init(Reni* reni, void* _)
     draw.reni = reni;
     draw.surface = reni_create_surface(draw.reni, (ReniSurfaceConfig){ .window = draw.window });
 
+    draw_load_sprites();
     draw_init_shaders();
 
     draw.instance_buffer = reni_create_buffer(draw.reni, (ReniBufferConfig) {  .usage = ReniBufferUsage_CopyDst | ReniBufferUsage_Vertex }),
@@ -178,11 +261,19 @@ void draw_scene(Scene* scene, f32 time)
         vektor_clear(draw.instances);
 
         EntityIter iter = { .include = CT_Sprite };
-        while (scene_next_entity(scene, &iter)) vektor_add(draw.instances, iter.entity->transform);
+        while (scene_next_entity(scene, &iter))
+            vektor_add(draw.instances, (Instance){
+                .x = iter.entity->transform.x,
+                .y = iter.entity->transform.y,
+                .w = iter.entity->transform.w,
+                .h = iter.entity->transform.h,
+                .sprite = iter.entity->sprite
+            });
         reni_buffer_write(draw.reni, draw.instance_buffer, slice_vektor_u8(draw.instances), 0);
 
         reni_renderpass_set_shader(draw.reni, pass, draw.shader);
         reni_renderpass_set_binding(draw.reni, pass, 0, draw.shader_data.binding);
+        reni_renderpass_set_binding(draw.reni, pass, 1, draw.atlas.binding);
         reni_renderpass_draw(draw.reni, pass, (ReniDrawConfig) {
             .n_vertices = 6,
             .n_instances = draw.instances.n_items,

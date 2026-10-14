@@ -59,100 +59,85 @@ static void load_sprite(Sprite* s, NSVGrasterizer* rast) {
     f32 b[4] = { INFINITY, INFINITY, -INFINITY, -INFINITY };
     bool found = false;
     for (NSVGshape* sh = img->shapes; sh; sh = sh->next) {
-        if (strcmp(sh->id, ORIGIN_ID)) continue;
+        if (c_str_cmp(sh->id, ORIGIN_ID)) continue;
         b[0] = fminf(b[0], sh->bounds[0]); b[1] = fminf(b[1], sh->bounds[1]);
         b[2] = fmaxf(b[2], sh->bounds[2]); b[3] = fmaxf(b[3], sh->bounds[3]);
         sh->flags &= ~NSVG_FLAGS_VISIBLE;
         found = true;
     }
     if (!found) mrw_abort("{}: missing origin", s->path);
-    f32 cx = 0.5f * (b[0] + b[2]), cy = 0.5f * (b[1] + b[3]);
 
-    i32 rw = (i32)ceilf(img->width), rh = (i32)ceilf(img->height);
-    u8* full = mrw_alloc_n(a, u8, (usize)rw * rh * 4);
-    nsvgRasterize(rast, img, 0, 0, 1.0f, full, rw, rh, rw * 4);
-    nsvgDelete(img);
+    s->w = (i32)ceilf(img->width);
+    s->h = (i32)ceilf(img->height);
+    s->ox = 0.5f * (b[0] + b[2]);
+    s->oy = 0.5f * (b[1] + b[3]);
 
-    i32 x0 = rw, y0 = rh, x1 = -1, y1 = -1;
-    for (i32 y = 0; y < rh; y++) {
-        for (i32 x = 0; x < rw; x++) {
-            if (!full[((usize)y * rw + x) * 4 + 3]) continue;
-            x0 = min(x0, x); x1 = max(x1, x);
-            y0 = min(y0, y); y1 = max(y1, y);
-        }
-    }
-
-    s->w = x1 - x0 + 1;
-    s->h = y1 - y0 + 1;
     s->px = mrw_alloc_n(a, u8, (usize)s->w * s->h * 4);
-    for (i32 y = 0; y < s->h; y++)
-        buf_copy(s->px + (usize)y * s->w * 4, full + ((usize)(y0 + y) * rw + x0) * 4, (usize)s->w * 4);
-
-    s->ox = cx - (f32)x0;
-    s->oy = cy - (f32)y0;
+    nsvgRasterize(rast, img, 0, 0, 1.0f, s->px, s->w, s->h, s->w * 4);
+    nsvgDelete(img);
 }
 
-static i32 pack(Sprite* s, u32 n) {
-    for (u32 i = 0; i < n; i++) s[i].page = -1;
+static i32 pack(SpriteSlice sprites) {
+    slice_for_each(sprites, s, Sprite) s->page = -1;
 
+    u32 n = slice_count(sprites);
     stbrp_rect* r     = mrw_alloc_n(a, stbrp_rect, n);
     stbrp_node* nodes = mrw_alloc_n(a, stbrp_node, PAGE_W);
     i32 pages = 0;
     u32 left  = n;
     while (left > 0) {
-        u32 m = 0;
-        for (u32 i = 0; i < n; i++) {
-            if (s[i].page >= 0) continue;
+        i32 m = 0;
+        slice_for_each_i(sprites, i) {
+            Sprite* s = &sprites.start[i];
+            if (s->page >= 0) continue;
             r[m].id = (i32)i;
-            r[m].w  = s[i].w + 2 * PAD;
-            r[m].h  = s[i].h + 2 * PAD;
+            r[m].w  = s->w + PAD * 2;
+            r[m].h  = s->h + PAD * 2;
             m++;
         }
+
         stbrp_context ctx;
         stbrp_init_target(&ctx, PAGE_W, PAGE_H, nodes, PAGE_W);
         stbrp_setup_heuristic(&ctx, STBRP_HEURISTIC_Skyline_BF_sortHeight);
-        stbrp_pack_rects(&ctx, r, (i32)m);
+        stbrp_pack_rects(&ctx, r, m);
 
         u32 placed = 0;
-        for (u32 j = 0; j < m; j++) {
-            if (!r[j].was_packed) continue;
-            Sprite* sp = &s[r[j].id];
-            sp->page = pages;
-            sp->x = r[j].x + PAD;
-            sp->y = r[j].y + PAD;
+        for (u32 i = 0; i < m; i++) {
+            if (!r[i].was_packed) continue;
+            Sprite* s = &sprites.start[r[i].id];
+            s->page = pages;
+            s->x = r[i].x + PAD;
+            s->y = r[i].y + PAD;
             placed++;
         }
-        if (!placed) mrw_abort("a sprite is larger than the page");
         left -= placed;
         pages++;
     }
     return pages;
 }
 
-static void write_pages(const Sprite* sprites, u32 n, i32 pages, cstr dir) {
+static void write_pages(SpriteSlice sprites, i32 pages, cstr dir) {
     usize size = (usize)PAGE_W * PAGE_H * 4;
     u8* buf = mrw_alloc_n(a, u8, size);
-    char path[1024];
-    for (i32 p = 0; p < pages; p++) {
+    char path[1024] = { 0 };
+    for (u32 p = 0; p < pages; p++) {
         buf_set(buf, 0, size);
-        for (u32 i = 0; i < n; i++) {
-            const Sprite* s = &sprites[i];
+        slice_for_each(sprites, s, Sprite) {
             if (s->page != p) continue;
-            for (i32 y = -PAD; y < s->h + PAD; y++) {
-                const u8* row = s->px + (usize)clamp(y, 0, s->h - 1) * s->w * 4;
+            for (u32 y = 0; y < s->h; y++) {
                 u8* dst = buf + ((usize)(s->y + y) * PAGE_W + (usize)(s->x - PAD)) * 4;
-                for (i32 x = -PAD; x < s->w + PAD; x++, dst += 4)
-                    buf_copy(dst, row + (usize)clamp(x, 0, s->w - 1) * 4, 4);
+                buf_copy(dst, s->px + y * s->w * 4, s->w * 4);
             }
         }
-        print(path, sizeof(path), "{}/atlas_{}.png", dir, p);
+        print(path, sizeof(path), "{}/atlas_{d}.png", dir, p);
         stbi_write_png(path, PAGE_W, PAGE_H, 4, buf, PAGE_W * 4);
     }
 }
 
-static void write_header(const Sprite* s, u32 n, i32 pages, cstr dir) {
+static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     char path[1024] = { 0 };
     print(path, sizeof(path), "{}/atlas.h", dir);
+    mrw_debug("writing to file {}", path);
     FILE* f = fopen(path, "wb");
 
     printfb(f, "#pragma once\n\n");
@@ -160,19 +145,19 @@ static void write_header(const Sprite* s, u32 n, i32 pages, cstr dir) {
     printfb(f, "#define ATLAS_PAGE_COUNT {}\n#define ATLAS_PAGE_W {}\n#define ATLAS_PAGE_H {}\n\n", pages, PAGE_W, PAGE_H);
 
     printfb(f, "typedef enum %{\n");
-    for (u32 i = 0; i < n; i++) printfb(f, "    SPRITE_{},\n", s[i].ident);
+    slice_for_each(sprites, s, Sprite) printfb(f, "    SPRITE_{},\n", s->ident);
     printfb(f, "    SPRITE_COUNT\n} SpriteId;\n\n");
 
     printfb(f, "static struct %{"
-        "i32 page, x, y, w, h; f64 u0, v0, u1, v1, ox, oy; } sprites[SPRITE_COUNT] = %{\n");
-    for (u32 i = 0; i < n; i++)
+        "i32 page, x, y, w, h; f64 u0, v0, u1, v1, ox, oy;} sprites[SPRITE_COUNT] = %{\n");
+    slice_for_each(sprites, s, Sprite)
     {
-        printfb(f, "%{{},", s[i].page);
-        printfb(f, "{}, {}, {}, {},", s[i].x, s[i].y, s[i].w, s[i].h);
-        printfb(f, "{}, {}, {}, {},",
-            (f64)s[i].x / PAGE_W, (f64)s[i].y / PAGE_H,
-            (f64)(s[i].x + s[i].w) / PAGE_W, (f64)(s[i].y + s[i].h) / PAGE_H);
-        printfb(f, "{}, {}},\n", (f64)s[i].ox, (f64)s[i].oy);
+        printfb(f, "    %{{}, ", s->page);
+        printfb(f, "{}, {}, {}, {}, ", s->x, s->y, s->w, s->h);
+        printfb(f, "{}, {}, {}, {}, ",
+            (f64)s->x / PAGE_W, (f64)s->y / PAGE_H,
+            (f64)(s->x + s->w) / PAGE_W, (f64)(s->y + s->h) / PAGE_H);
+        printfb(f, "{}, {}},\n", (f64)s->ox, (f64)s->oy);
     }
     printfb(f, "};\n\n");
 
@@ -181,21 +166,24 @@ static void write_header(const Sprite* s, u32 n, i32 pages, cstr dir) {
 
 // atlasgen <png_dir> <gen_dir> <file.svg>...
 i32 main(i32 argc, char** argv) {
-    cstr png_dir = argv[1];
-    cstr gen_dir = argv[2];
-    u32  n       = (u32)argc - 3;
+    argv++;
+    cstr png_dir = *(argv++);
+    cstr gen_dir = *(argv++);
 
-    Sprite* sprites = mrw_alloc_n(a, Sprite, n);
-    for (u32 i = 0; i < n; i++) {
-        sprites[i].path = argv[3 + i];
-        make_ident(sprites[i].path, sprites[i].ident, sizeof sprites[i].ident);
-    }
+    u32 n = (u32)argc - 3;
+    Sprite* s = mrw_alloc_n(a, Sprite, n);
+    SpriteSlice sprites = slice_to(s, n);
 
     NSVGrasterizer* rast = nsvgCreateRasterizer();
-    for (u32 i = 0; i < n; i++) load_sprite(&sprites[i], rast);
+    slice_for_each(sprites, s, Sprite)
+    {
+        s->path = *(argv++);
+        make_ident(s->path, s->ident, sizeof s->ident);
+        load_sprite(s, rast);
+    }
 
-    i32 pages = pack(sprites, n);
-    write_pages(sprites, n, pages, png_dir);
-    write_header(sprites, n, pages, gen_dir);
+    i32 pages = pack(sprites);
+    write_pages(sprites, pages, png_dir);
+    write_header(sprites, pages, gen_dir);
     return 0;
 }

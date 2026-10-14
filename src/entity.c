@@ -1,3 +1,4 @@
+#include "atlas.h"
 #define BUGGIN_ENTITY
 #include "base.c"
 
@@ -26,9 +27,7 @@ STRUCT(Entity) {
 
     TransformC transform;
 
-    struct SpriteC {
-        u32 sprite;
-    } sprite;
+    SpriteId sprite;
 
     struct PhysicsC {
         f32 vel_x, vel_y;
