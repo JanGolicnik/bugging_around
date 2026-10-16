@@ -52,7 +52,7 @@ bool game_init(void)
 
     game.scene = game_new_scene();
     game.entity_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod 1"),
-        .sprite = SPRITE_S1
+        .sprite.id = SPRITE_S1
     );
     EntityHandle parent = game.entity_guy;
     vec2s local_pos = sprite_get_tag_pos(SPRITE_S1, SpriteTag_attach);
@@ -61,11 +61,11 @@ bool game_init(void)
         parent = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = mrw_format("stvor{}", game.mem.stable, i),
             .parent = parent,
             .local = { .pos = local_pos, .scale = 0.9f },
-            .sprite = SPRITE_S1
+            .sprite.id = SPRITE_S1
         );
     }
     game.other_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod2"),
-        .sprite = SPRITE_S2
+        .sprite.id = SPRITE_S2
     );
 
     return draw_init(game.mem.stable, game.mem.frame);
@@ -94,7 +94,7 @@ void game_update(void)
         while (scene_next_entity(game.scene, &s1_iter))
         {
             Entity* e = s1_iter.entity;
-            if (e->sprite != SPRITE_S1) continue;
+            if (e->sprite.id != SPRITE_S1) continue;
             e->local.rot = game.time;
         }
 

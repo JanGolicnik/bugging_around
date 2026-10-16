@@ -18,6 +18,13 @@ STRUCT(Transform)
     f32  scale, rot;
 };
 
+typedef enum {
+    Layer_Background,
+    Layer_Guys,
+    Layer_Ui,
+    Layer_Count
+} Layer;
+
 STRUCT(Entity) {
     str name;
     Scene* scene;
@@ -27,7 +34,10 @@ STRUCT(Entity) {
 
     Transform local, world;
 
-    SpriteId sprite;
+    struct {
+        SpriteId id;
+        Layer layer;
+    } sprite;
 
     struct PhysicsC {
         f32 vel_x, vel_y;

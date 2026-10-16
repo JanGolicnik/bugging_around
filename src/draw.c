@@ -1,3 +1,4 @@
+#include "marrow/vektor.h"
 #define BUGGIN_DRAW
 #include "base.c"
 
@@ -272,15 +273,34 @@ void draw_scene(Scene* scene, f32 time)
     { // draw sprites and shit
         vektor_clear(draw.instances);
 
+        // count up the layers
+        u32 n_sprites_per_layer[Layer_Count] = { 0 };
+        {
+            EntityIter iter = { .include = CT_Sprite };
+            while (scene_next_entity(scene, &iter))
+                n_sprites_per_layer[iter.entity->sprite.layer]++;
+        }
+        u32 layer_offset[Layer_Count] = { 0 };
+        u32 offset = 0;
+        for (u32 i = 0; i < Layer_Count; i++)
+        {
+            layer_offset[i] = offset;
+            offset += n_sprites_per_layer[i];
+        }
+        vektor_ensure(draw.instances, offset);
         EntityIter iter = { .include = CT_Sprite };
         while (scene_next_entity(scene, &iter))
-            vektor_add(draw.instances, (Instance){
+        {
+            Entity* e = iter.entity;
+            u32 i = layer_offset[e->sprite.layer] + --n_sprites_per_layer[e->sprite.layer];
+            draw.instances.items[i] = (Instance){
                 .x = iter.entity->world.pos.x,
                 .y = iter.entity->world.pos.y,
                 .scale = iter.entity->world.scale,
                 .rot = iter.entity->world.rot,
-                .sprite = iter.entity->sprite
-            });
+                .sprite = iter.entity->sprite.id
+            };
+        }
         reni_buffer_write(draw.reni, draw.instance_buffer, slice_vektor_u8(draw.instances), 0);
 
         reni_renderpass_set_shader(draw.reni, pass, draw.shader);
