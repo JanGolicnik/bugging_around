@@ -61,7 +61,8 @@ bool game_init(void)
         parent = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = mrw_format("stvor{}", game.mem.stable, i),
             .parent = parent,
             .local = { .pos = local_pos, .scale = 0.9f },
-            .sprite.id = SPRITE_S1
+            .sprite.id = SPRITE_S1,
+            .sprite.layer = Layer_Guys
         );
     }
     game.other_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod2"),
