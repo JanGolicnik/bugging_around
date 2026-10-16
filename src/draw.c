@@ -1,5 +1,3 @@
-#include "marrow/marrow.h"
-#include "reni/reni.h"
 #define BUGGIN_DRAW
 #include "base.c"
 
@@ -11,15 +9,10 @@ cstr common_includes[] = {
     "./res/shaders/common.wgsl"
 };
 
-STRUCT(Sprite)
-{
-    u32 index;
-};
-
 STRUCT(Instance)
 {
     f32 x, y;
-    f32 w, h;
+    f32 scale, rot;
     SpriteId sprite;
 };
 
@@ -32,7 +25,6 @@ struct {
     ReniSurface surface;
     RippleContext ripple;
 
-    GENARR(Sprite) sprites;
     VEKTOR(Instance) instances;
     ReniBuffer instance_buffer;
 
@@ -63,7 +55,10 @@ struct {
 } draw;
 
 STRUCT(GPUSprite) {
-    f32 u0, v0, u1, v1;
+    f32 uv0[2];
+    f32 uv1[2];
+    f32 size_px[2];
+    f32 origin_px[2];
 };
 
 void draw_load_sprites(void)
@@ -105,12 +100,24 @@ void draw_load_sprites(void)
 
     GPUSprite sprites_buffer[SPRITE_COUNT] = { 0 };
     for (u32 i = 0; i < SPRITE_COUNT; i++)
-        sprites_buffer[i] = (GPUSprite){
-            .u0 = sprites[i].u0,
-            .v0 = sprites[i].v0,
-            .u1 = sprites[i].u1,
-            .v1 = sprites[i].v1
+    {
+        vec2s size = {{ sprites[i].w, sprites[i].h }};
+        GPUSprite out = {
+            .uv0 = { sprites[i].u0, sprites[i].v0 },
+            .uv1 = { sprites[i].u1, sprites[i].v1 },
+            .size_px = { size.x, size.y },
         };
+        for (u32 j = 0; sprites[i].tags[j].tag != SpriteTag_None; j++)
+        {
+            if (sprites[i].tags[j].tag == SpriteTag_origin)
+            {
+                vec2s origin = vec2_sub(vec2_scale(size, 0.5f), (vec2s){{ sprites[i].tags[j].x, sprites[i].tags[j].y }});
+                out.origin_px[0] = origin.x;
+                out.origin_px[1] = origin.y;
+            }
+        }
+        sprites_buffer[i] = out;
+    }
 
     draw.atlas.sprites_buffer = reni_create_buffer(draw.reni, (ReniBufferConfig){
         .name = str("sprites buffer"),
@@ -164,11 +171,16 @@ void draw_init_shaders(void)
                 },
                 .attributes[1] = {
                     .location = 1,
-                    .offset = offsetof(Instance, w),
-                    .format = ReniVertexFormat_Float32x2,
+                    .offset = offsetof(Instance, scale),
+                    .format = ReniVertexFormat_Float32,
                 },
                 .attributes[2] = {
                     .location = 2,
+                    .offset = offsetof(Instance, rot),
+                    .format = ReniVertexFormat_Float32,
+                },
+                .attributes[3] = {
+                    .location = 3,
                     .offset = offsetof(Instance, sprite),
                     .format = ReniVertexFormat_Uint32,
                 }
@@ -263,10 +275,10 @@ void draw_scene(Scene* scene, f32 time)
         EntityIter iter = { .include = CT_Sprite };
         while (scene_next_entity(scene, &iter))
             vektor_add(draw.instances, (Instance){
-                .x = iter.entity->transform.x,
-                .y = iter.entity->transform.y,
-                .w = iter.entity->transform.w,
-                .h = iter.entity->transform.h,
+                .x = iter.entity->world.pos.x,
+                .y = iter.entity->world.pos.y,
+                .scale = iter.entity->world.scale,
+                .rot = iter.entity->world.rot,
                 .sprite = iter.entity->sprite
             });
         reni_buffer_write(draw.reni, draw.instance_buffer, slice_vektor_u8(draw.instances), 0);

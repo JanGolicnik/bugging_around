@@ -1,6 +1,6 @@
 <svg width="243" height="291" viewBox="0 0 243 291" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="s2">
-<path id="Vector 1" d="M236.275 13.127C218.942 28.127 155.675 55.527 41.2749 45.127L7.2749 282.127L236.275 213.127V13.127Z" stroke="#D02424" stroke-width="12"/>
-<ellipse id="origin" cx="84.7749" cy="195.127" rx="11.5" ry="10" fill="#D9D9D9"/>
+<path id="Vector 1" d="M41.2749 45.127C155.675 55.527 218.942 28.127 236.275 13.127V213.127L7.2749 282.127L41.2749 45.127Z" stroke-width="12" stroke="#D02424"/>
+<ellipse id="_origin" cx="84.7749" cy="195.127" rx="11.5" ry="10" fill="#D9D9D9"/>
 </g>
 </svg>

@@ -16,6 +16,10 @@
 #include <ripple/ripple.h>
 #include <ripple/ripple_widgets.h>
 
+#define CGLM_OMIT_NS_FROM_STRUCT_API
+#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <cglm/struct.h>
+
 static u8Slice read_file(cstr path, Allocator* a) {
     FILE* f = fopen(path, "rb");
     fseek(f, 0, SEEK_END); long n = ftell(f);

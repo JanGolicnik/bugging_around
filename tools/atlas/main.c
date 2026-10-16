@@ -9,18 +9,25 @@
 
 #include <marrow/marrow.h>
 #include <marrow/alloc.h>
+#include <marrow/mapa.h>
 
-#define ORIGIN_ID "origin"
 #define PAGE_W    2048
 #define PAGE_H    2048
 #define PAD       2
+
+STRUCT(Tag)
+{
+    cstr tag;
+    f32 x, y;
+};
 
 STRUCT(Sprite) {
     char* path;
     char  ident[128];
     u8*   px;
     i32   w, h;
-    f32   ox, oy;
+    Tag tags[128];
+    u32 n_tags;
     i32   page, x, y;
 };
 
@@ -56,25 +63,21 @@ static void make_ident(char* path, char* out, u32 cap) {
 static void load_sprite(Sprite* s, NSVGrasterizer* rast) {
     NSVGimage* img = nsvgParse(read_file(s->path), "px", 96.0f);
 
-    f32 b[4] = { INFINITY, INFINITY, -INFINITY, -INFINITY };
-    bool found = false;
     for (NSVGshape* sh = img->shapes; sh; sh = sh->next) {
-        if (c_str_cmp(sh->id, ORIGIN_ID)) continue;
-        b[0] = fminf(b[0], sh->bounds[0]); b[1] = fminf(b[1], sh->bounds[1]);
-        b[2] = fmaxf(b[2], sh->bounds[2]); b[3] = fmaxf(b[3], sh->bounds[3]);
+        if (sh->id[0] != '_') continue;
         sh->flags &= ~NSVG_FLAGS_VISIBLE;
-        found = true;
+        s->tags[s->n_tags++] = (Tag){
+            .tag = sh->id,
+            .x = (sh->bounds[0] + sh->bounds[2]) / 2.0f,
+            .y =  (sh->bounds[1] + sh->bounds[3]) / 2.0f
+        };
     }
-    if (!found) mrw_abort("{}: missing origin", s->path);
 
     s->w = (i32)ceilf(img->width);
     s->h = (i32)ceilf(img->height);
-    s->ox = 0.5f * (b[0] + b[2]);
-    s->oy = 0.5f * (b[1] + b[3]);
 
     s->px = mrw_alloc_n(a, u8, (usize)s->w * s->h * 4);
     nsvgRasterize(rast, img, 0, 0, 1.0f, s->px, s->w, s->h, s->w * 4);
-    nsvgDelete(img);
 }
 
 static i32 pack(SpriteSlice sprites) {
@@ -135,6 +138,12 @@ static void write_pages(SpriteSlice sprites, i32 pages, cstr dir) {
 }
 
 static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
+    MAPA(cstr, bool) tags = { 0 };
+    mapa_init(tags, mapa_hash_cstr, mapa_cmp_cstr, a);
+    slice_for_each(sprites, s, Sprite)
+        for (int i = 0; i < s->n_tags; i++)
+            mapa_insert(tags, &s->tags[i].tag, true);
+
     char path[1024] = { 0 };
     print(path, sizeof(path), "{}/atlas.h", dir);
     mrw_debug("writing to file {}", path);
@@ -144,12 +153,21 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     printfb(f, "#include <marrow/marrow.h>\n\n");
     printfb(f, "#define ATLAS_PAGE_COUNT {}\n#define ATLAS_PAGE_W {}\n#define ATLAS_PAGE_H {}\n\n", pages, PAGE_W, PAGE_H);
 
+    printfb(f, "typedef enum %{\n    SpriteTag_None,\n");
+    for (u64 i = 0; i < tags.size; i++)
+    {
+        cstr* t = mapa_get_key_at_index(tags, i);
+        if (!t) continue;
+        printfb(f, "    SpriteTag{},\n", *t);
+    }
+    printfb(f, "    SpriteTag_Count\n} SpriteTag;\n\n");
+
     printfb(f, "typedef enum %{\n");
     slice_for_each(sprites, s, Sprite) printfb(f, "    SPRITE_{},\n", s->ident);
     printfb(f, "    SPRITE_COUNT\n} SpriteId;\n\n");
 
     printfb(f, "static struct %{"
-        "i32 page, x, y, w, h; f64 u0, v0, u1, v1, ox, oy;} sprites[SPRITE_COUNT] = %{\n");
+        "i32 page, x, y, w, h; f64 u0, v0, u1, v1; struct %{ SpriteTag tag; f32 x, y; } tags[128]; } sprites[SPRITE_COUNT] = %{\n");
     slice_for_each(sprites, s, Sprite)
     {
         printfb(f, "    %{{}, ", s->page);
@@ -157,7 +175,14 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
         printfb(f, "{}, {}, {}, {}, ",
             (f64)s->x / PAGE_W, (f64)s->y / PAGE_H,
             (f64)(s->x + s->w) / PAGE_W, (f64)(s->y + s->h) / PAGE_H);
-        printfb(f, "{}, {}},\n", (f64)s->ox, (f64)s->oy);
+        printfb(f, "%{ ");
+        for (i32 i = 0; i < s->n_tags; i++)
+        {
+            printfb(f, "%{ .tag = SpriteTag{}", s->tags[i].tag);
+            printfb(f, ", .x = {}, .y = {} }, ", s->tags[i].x, s->tags[i].y);
+        }
+        printfb(f, " }");
+        printfb(f, "},\n");
     }
     printfb(f, "};\n\n");
 

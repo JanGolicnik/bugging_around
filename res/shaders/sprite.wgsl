@@ -6,6 +6,20 @@ struct ShaderData {
 struct Sprite {
     uv0: vec2f,
     uv1: vec2f,
+    size_px: vec2f,
+    origin_px: vec2f
+}
+
+struct InstanceInput {
+    @location(0) position: vec2f,
+    @location(1) scale: f32,
+    @location(2) rot: f32,
+    @location(3) sprite: u32,
+}
+
+struct VertexOutput{
+    @builtin(position) position: vec4f,
+    @location(0) uv: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> shader_data: ShaderData;
@@ -14,29 +28,20 @@ struct Sprite {
 @group(1) @binding(1) var texture: texture_2d<f32>;
 @group(1) @binding(2) var<storage, read> sprites: array<Sprite>;
 
-struct InstanceInput {
-    @location(0) position: vec2f,
-    @location(1) size: vec2f,
-    @location(2) sprite: u32,
-}
-
-struct VertexOutput{
-    @builtin(position) position: vec4f,
-    @location(0) uv: vec2f,
-}
-
 @vertex
 fn vs_main(@builtin(vertex_index) index : u32, i: InstanceInput) -> VertexOutput {
     let resolution = vec2f(f32(shader_data.resolution.x), f32(shader_data.resolution.y));
     let p = FULLSCREEN_QUAD_POSITIONS[index];
-    var position = i.position + p.xy * i.size;
+    let sprite = sprites[i.sprite];
+
+    let sprite_pos = (sprite.origin_px + p.xy * sprite.size_px * 0.5) * i.scale;
+
+    var position = i.position + rotate2d(sprite_pos, i.rot);
     position = position / resolution;
     position = vec2f(position.x, 1.0f - position.y) * 2.0f - vec2<f32>(1.0f, 1.0f);
-    let uv0 = sprites[i.sprite].uv0;
-    let uv1 = sprites[i.sprite].uv1;
     var out: VertexOutput;
     out.position = vec4(position, 0.0, 1.0);
-    out.uv = mix(uv0, uv1, vec2(p.x, p.y) * 0.5f + 0.5f);
+    out.uv = mix(sprite.uv0, sprite.uv1, vec2(p.x, p.y) * 0.5f + 0.5f);
     return out;
 }
 

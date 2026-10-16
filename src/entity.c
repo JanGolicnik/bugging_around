@@ -1,4 +1,3 @@
-#include "atlas.h"
 #define BUGGIN_ENTITY
 #include "base.c"
 
@@ -13,9 +12,10 @@ typedef struct Scene Scene;
 
 typedef GenarrHandle EntityHandle;
 
-STRUCT(TransformC)
+STRUCT(Transform)
 {
-    f32 x, y, w, h;
+    vec2s pos;
+    f32  scale, rot;
 };
 
 STRUCT(Entity) {
@@ -25,7 +25,7 @@ STRUCT(Entity) {
 
     ComponentType components;
 
-    TransformC transform;
+    Transform local, world;
 
     SpriteId sprite;
 

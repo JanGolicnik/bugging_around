@@ -1,4 +1,5 @@
 #include "atlas.h"
+#include "marrow/marrow.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -33,6 +34,16 @@ Scene* game_new_scene(void) {
     return scene;
 }
 
+vec2s sprite_get_tag_pos(SpriteId id, SpriteTag tag)
+{
+    for (u32 i = 0; sprites[id].tags[i].tag; i++)
+    {
+        if (sprites[id].tags[i].tag == tag)
+            return (vec2s){ .x = sprites[id].tags[i].x, .y = sprites[id].tags[i].y };
+    }
+    return (vec2s){ 0 };
+}
+
 bool game_init(void)
 {
     game.mem.stable = nullptr;
@@ -40,12 +51,20 @@ bool game_init(void)
     game.mem.frame = (Allocator*)&game.mem._frame;
 
     game.scene = game_new_scene();
-    game.entity_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod1"),
-        .transform = { .w = 100.0f, .h = 50.0f },
+    game.entity_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod 1"),
         .sprite = SPRITE_S1
     );
+    EntityHandle parent = game.entity_guy;
+    vec2s local_pos = sprite_get_tag_pos(SPRITE_S1, SpriteTag_attach);
+    for (int i = 0; i < 10000; i++)
+    {
+        parent = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = mrw_format("stvor{}", game.mem.stable, i),
+            .parent = parent,
+            .local = { .pos = local_pos, .scale = 0.9f },
+            .sprite = SPRITE_S1
+        );
+    }
     game.other_guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod2"),
-        .transform = { .w = 50.0f, .h = 100.0f },
         .sprite = SPRITE_S2
     );
 
@@ -71,20 +90,24 @@ void game_update(void)
         text(str("hello everynyan"));
         text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
 
+        EntityIter s1_iter = { .include = CT_Sprite };
+        while (scene_next_entity(game.scene, &s1_iter))
+        {
+            Entity* e = s1_iter.entity;
+            if (e->sprite != SPRITE_S1) continue;
+            e->local.rot = game.time;
+        }
+
         Entity* guy = scene_get_entity(game.scene, game.entity_guy);
-        guy->transform.x = draw.width * 0.5 + sin(game.time) * 100.0f;
-        guy->transform.y = draw.height * 0.5;
+        guy->world.pos.x = draw.width * 0.5 + sin(game.time) * 100.0f;
+        guy->world.pos.y = draw.height * 0.5;
+        guy->world.rot = -game.time;
+        entity_apply_world(guy);
 
         Entity* other_guy = scene_get_entity(game.scene, game.other_guy);
-        other_guy->transform.x = draw.width * 0.5 + sin(game.time * 4.0f) * 100.0f;
-        other_guy->transform.y = draw.height * 0.3;
-
-        EntityIter iter = { .include = CT_Transform };
-        while(scene_next_entity(game.scene, &iter))
-        {
-            text(mrw_format("entity {} exists", game.mem.frame, iter.entity->name));
-            text(mrw_format("at {.1f} {.1f}", game.mem.frame, iter.entity->transform.x, iter.entity->transform.y));
-        }
+        other_guy->world.pos.x = draw.width * 0.5 + sin(game.time * 4.0f) * 100.0f;
+        other_guy->world.pos.y = draw.height * 0.3;
+        entity_apply_world(other_guy);
     }
 }
 

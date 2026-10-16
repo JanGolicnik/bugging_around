@@ -7,8 +7,10 @@ set(CMAKE_C_EXTENSIONS ON)
 
 include(FetchContent)
 
-set(THIRD_PARTY_DEPS marrow printccy ripple SDL3)
+set(THIRD_PARTY_DEPS cglm marrow printccy ripple SDL3)
 
+set(FETCH_CGLM_REPO      "https://github.com/recp/cglm.git")
+set(FETCH_CGLM_TAG       "v0.9.5")
 set(FETCH_MARROW_REPO    "https://github.com/JanGolicnik/marrow.git")
 set(FETCH_MARROW_TAG     "master")
 set(FETCH_PRINTCCY_REPO  "https://github.com/JanGolicnik/printccy.git")
@@ -63,6 +65,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+  cglm
   marrow
   printccy
   ripple

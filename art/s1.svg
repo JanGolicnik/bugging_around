@@ -1,6 +1,7 @@
 <svg width="364" height="278" viewBox="0 0 364 278" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="s1">
-<path id="Vector 2" d="M12 12V115L119 264L352 201" stroke="#83FA91" stroke-width="24" stroke-linecap="round"/>
-<ellipse id="origin" cx="12.5" cy="12" rx="11.5" ry="10" fill="#D9D9D9"/>
+<path id="Vector 2" d="M12 12V115L119 264L352 201" stroke-width="24" stroke-linecap="round" stroke="#83FA91"/>
+<ellipse id="_origin" cx="12.5" cy="12" rx="11.5" ry="10" fill="#D9D9D9"/>
+<ellipse id="_attach" cx="351.5" cy="204" rx="11.5" ry="10" fill="#D9D9D9"/>
 </g>
 </svg>

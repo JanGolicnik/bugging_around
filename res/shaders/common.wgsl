@@ -58,3 +58,12 @@ fn isnan(x: f32) -> bool {
 fn length2(v: vec3f) -> f32 {
     return dot(v, v);
 }
+
+fn rotate2d(v: vec2<f32>, angle: f32) -> vec2<f32> {
+    let c = cos(angle);
+    let s = sin(angle);
+    return vec2<f32>(
+        v.x * c - v.y * s,
+        v.x * s + v.y * c
+    );
+}
