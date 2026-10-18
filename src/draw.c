@@ -1,3 +1,4 @@
+#include "SDL3/SDL_hints.h"
 #include "marrow/vektor.h"
 #define BUGGIN_DRAW
 #include "base.c"
@@ -221,8 +222,6 @@ static void on_reni_error(str msg)
 
 bool draw_init(Allocator* stable, Allocator* frame)
 {
-    if (!SDL_Init(SDL_INIT_VIDEO)) return false;
-
     SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #ifdef SDL_PLATFORM_APPLE
     flags |= SDL_WINDOW_METAL;

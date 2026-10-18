@@ -62,14 +62,24 @@ static void make_ident(char* path, char* out, u32 cap) {
 
 static void load_sprite(Sprite* s, NSVGrasterizer* rast) {
     NSVGimage* img = nsvgParse(read_file(s->path), "px", 96.0f);
-
+    bool has_origin = false;
     for (NSVGshape* sh = img->shapes; sh; sh = sh->next) {
         if (sh->id[0] != '_') continue;
         sh->flags &= ~NSVG_FLAGS_VISIBLE;
+        has_origin |= c_str_cmp(sh->id, "_origin");
         s->tags[s->n_tags++] = (Tag){
             .tag = sh->id,
             .x = (sh->bounds[0] + sh->bounds[2]) / 2.0f,
             .y =  (sh->bounds[1] + sh->bounds[3]) / 2.0f
+        };
+    }
+
+    if (!has_origin)
+    {
+        s->tags[s->n_tags++] = (Tag){
+            .tag = "_origin",
+            .x = img->width * 0.5f,
+            .y = img->height * 0.5f
         };
     }
 

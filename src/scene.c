@@ -59,7 +59,7 @@ Transform transform_calculate_world(Transform parent, Transform local) {
 
 Transform transform_calculate_local(Transform parent, Transform world) {
     return (Transform){
-      .pos = vec2_scale(vec2_rotate(world.pos, -parent.rot), 1.0f / parent.scale),
+      .pos = vec2_sub(vec2_scale(vec2_rotate(world.pos, -parent.rot), 1.0f / parent.scale), parent.pos),
       .rot = world.rot - parent.rot,
       .scale = world.scale / parent.scale,
     };
