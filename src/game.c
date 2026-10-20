@@ -144,7 +144,7 @@ void game_update(void)
     RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
     {
         text(str("hello everynyan"));
-        game_text("fps: {}", game.mem.frame, game.avg_fps);
+        text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
 
         Entity* dpad = scene_get_entity(game.scene, game.dpad);
         vec2s dpad_size = entity_sprite_size(dpad);
