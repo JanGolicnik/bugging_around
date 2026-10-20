@@ -1,6 +1,6 @@
 set(ATLAS_SVG_DIR "${PROJECT_SOURCE_DIR}/art")
 set(ATLAS_PNG_DIR "${PROJECT_SOURCE_DIR}/res/atlas")
-set(ATLAS_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+set(ATLAS_GEN_DIR "${PROJECT_SOURCE_DIR}/src")
 set(ATLAS_HEADER "${ATLAS_GEN_DIR}/atlas.h")
 
 add_executable(atlasgen main.c)

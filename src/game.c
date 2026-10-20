@@ -1,3 +1,4 @@
+#include "SDL3/SDL_events.h"
 #include "ripple/ripple_widgets.h"
 #define BUGGIN_GAME
 #include "base.c"
@@ -143,7 +144,7 @@ void game_update(void)
     RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
     {
         text(str("hello everynyan"));
-        text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
+        game_text("fps: {}", game.mem.frame, game.avg_fps);
 
         Entity* dpad = scene_get_entity(game.scene, game.dpad);
         vec2s dpad_size = entity_sprite_size(dpad);
@@ -204,6 +205,20 @@ void game_destroy(void)
     return;
 }
 
+void on_finger_event(u32 id, f32 x, f32 y, bool down, bool motion)
+{
+    array_for_each_i(input.fingers, i) {
+        if ((down && !input.fingers[i].down) || input.fingers[i].id == id) {
+            if (down) input.fingers[i].down = game.frame;
+            else if (!motion) input.fingers[i].down = 0;
+            input.fingers[i].id = id;
+            input.fingers[i].x = x;
+            input.fingers[i].y = y;
+            break;
+        }
+    }
+}
+
 SDL_AppResult game_on_event(SDL_Event* e)
 {
     switch (e->type) {
@@ -219,23 +234,21 @@ SDL_AppResult game_on_event(SDL_Event* e)
             game.in_background = false;
             break;
 
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+        case SDL_EVENT_MOUSE_MOTION:
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+            on_finger_event(1, e->motion.x, e->motion.y, e->type == SDL_EVENT_MOUSE_BUTTON_DOWN, e->type == SDL_EVENT_MOUSE_MOTION);
+        } break;
+
         case SDL_EVENT_FINGER_DOWN:
         case SDL_EVENT_FINGER_MOTION:
         case SDL_EVENT_FINGER_UP:
         case SDL_EVENT_FINGER_CANCELED: {
-            bool down = e->type == SDL_EVENT_FINGER_DOWN;
-            array_for_each_i(input.fingers, i) {
-                if ((down && !input.fingers[i].down) || input.fingers[i].id == e->tfinger.fingerID) {
-                    i32 w, h; SDL_GetWindowSizeInPixels(draw.window, &w, &h);
-                    if (down) input.fingers[i].down = game.frame;
-                    else if (e->type != SDL_EVENT_FINGER_MOTION) input.fingers[i].down = 0;
-                    input.fingers[i].id = e->tfinger.fingerID;
-                    input.fingers[i].x = e->tfinger.x * w;
-                    input.fingers[i].y = e->tfinger.y * h;
-                    break;
-                }
-            }
+            i32 w, h; SDL_GetWindowSizeInPixels(draw.window, &w, &h);
+            on_finger_event(e->tfinger.fingerID, e->tfinger.x * w, e->tfinger.y * h, e->type == SDL_EVENT_FINGER_DOWN, e->type == SDL_EVENT_FINGER_MOTION);
         } break;
+
         default:
             break;
     }

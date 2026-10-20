@@ -6,8 +6,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
     const char* base = SDL_GetBasePath();
     if (base && chdir(base) != 0) mrw_debug("change base dir failed");
 
-    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
-    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1");
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
     if (!SDL_Init(SDL_INIT_VIDEO)) return false;
 
     bool success = true;

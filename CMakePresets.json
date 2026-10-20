@@ -33,9 +33,9 @@
         "CMAKE_CXX_COMPILER": "clang++",
         "WEBGPU_BACKEND": "DAWN",
         "WEBGPU_BUILD_FROM_SOURCE": "ON",
-        "DAWN_USE_WAYLAND": "ON",
-        "DAWN_USE_X11": "OFF",
-        "SDL_X11": "OFF"
+        "DAWN_USE_WAYLAND": "OFF",
+        "DAWN_USE_X11": "ON",
+        "SDL_X11": "ON"
       }
     },
     {
