@@ -1,5 +1,4 @@
-#include "SDL3/SDL_events.h"
-#include "ripple/ripple_widgets.h"
+#include "marrow/marrow.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -12,27 +11,21 @@ struct {
         Allocator* stable;
     } mem;
 
-    u64 frame;
-    f32 time;
-    f32 dt;
-    f32 dt_accum;
-    u32 dt_n_samples;
-
-    f32 avg_fps;
-
     VEKTOR(Scene*) scenes;
     Scene* scene;
 
-    EntityHandle guy;
-    EntityHandle dpad;
-    EntityHandle dpad_bg;
-    EntityHandle dpad_pad;
-    SDL_FingerID dpad_finger;
-} game;
+    EntityHandle anchors[9];
 
-struct {
-    struct { SDL_FingerID id; f32 x, y; u64 down; } fingers[10];
-} input;
+    EntityHandle guy;
+
+    struct
+    {
+        EntityHandle root;
+        EntityHandle bg;
+        EntityHandle pad;
+        SDL_FingerID finger;
+    } dpad;
+} game;
 
 Scene* game_new_scene(void) {
     Scene* scene = mrw_alloc(game.mem.stable, Scene);
@@ -52,6 +45,23 @@ vec2s sprite_get_tag_pos(SpriteId id, SpriteTag tag)
     return (vec2s){ 0 };
 }
 
+#define XAnchors \
+X(Anchor_lt, -1.0f, 1.0f),  X(Anchor_mt , 0.0f, 1.0f),  X(Anchor_rt , 1.0f, 1.0f),\
+X(Anchor_lm, -1.0f, 0.0f),  X(Anchor_mm , 0.0f, 0.0f),  X(Anchor_rm , 1.0f, 0.0f),\
+X(Anchor_lb, -1.0f, -1.0f),  X(Anchor_mb , 0.0f, -1.0f),  X(Anchor_rb , 1.0f, -1.0f),
+
+#define X(name, ...) {{ __VA_ARGS__ }}
+vec2s _anchors[9] = { XAnchors };
+#undef X
+
+#define X(name, ...) sstr(#name)
+str _anchor_names[9] = { XAnchors };
+#undef X
+
+#define X(name, ...) name
+typedef enum { XAnchors } Anchor;
+#undef X
+
 bool game_init(void)
 {
     game.mem.stable = nullptr;
@@ -59,134 +69,76 @@ bool game_init(void)
     game.mem.frame = (Allocator*)&game.mem._frame;
 
     game.scene = game_new_scene();
+
+    array_for_each_i(_anchors, i) {
+        game.anchors[i] = scene_create_entity(game.scene, CT_Transform, .name = _anchor_names[i],
+            .world.pos = _anchors[i]
+        );
+    }
+
     game.guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod 1"),
         .sprite.id = SPRITE_S1
     );
 
-    game.dpad = scene_create_entity(game.scene, CT_Transform, .name = str("dpad"));
-
-    game.dpad_bg = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_pad"),
-        .parent = game.dpad,
+    game.dpad.root = scene_create_entity(game.scene, CT_Transform, .name = str("dpad"), .parent = game.anchors[Anchor_lb]);
+    game.dpad.bg = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_pad"),
+        .parent = game.dpad.root,
         .sprite.id = SPRITE_DPAG_BG
     );
-
-    game.dpad_pad = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_pad"),
-        .parent = game.dpad,
+    game.dpad.pad = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_pad"),
+        .parent = game.dpad.root,
         .sprite.id = SPRITE_DPAD_PAD
     );
 
     return draw_init(game.mem.stable, game.mem.frame);
 }
 
-SDL_FingerID is_pressed_at(f32 x, f32 y, f32 radius, SDL_FingerID id)
+#define game_text(...) text(mrw_format(game.mem.frame, __VA_ARGS__))
+
+void game_update_ui(void)
 {
-    if (id)
+    Entity* dpad = scene_get_entity(game.scene, game.dpad.root);
+    vec2s dpad_size = entity_sprite_size(dpad);
+    dpad->world.pos.x = dpad_size.x + 100;
+    dpad->world.pos.y = -(dpad_size.y + 100);
+    entity_apply_world(dpad);
+
+    f32 dpad_radius = entity_sprite_size(scene_get_entity(game.scene, game.dpad.bg)).x * .5f;
+    Entity* pad = scene_get_entity(game.scene, game.dpad.pad);
+    if ((game.dpad.finger = is_finger_down_at(dpad->world.pos.x, dpad->world.pos.y, dpad_radius, game.dpad.finger)))
     {
-        array_for_each_i(input.fingers, i) {
-            if (input.fingers[i].id == id && input.fingers[i].down)
-            {
-                return id;
-            }
-        }
-        return 0;
-    }
-
-    array_for_each_i(input.fingers, i) {
-        if (input.fingers[i].down == game.frame &&
-            vec2_norm((vec2s){ .x = input.fingers[i].x - x, .y = input.fingers[i].y - y }) < radius)
+        pad->world.pos = finger_pos(game.dpad.finger);
+        entity_apply_world(pad);
+        if (vec2_norm(pad->local.pos) > dpad_radius)
         {
-            return input.fingers[i].id;
+            pad->local.pos = vec2_scale(vec2_normalize(pad->local.pos), dpad_radius);
+            entity_apply_local(pad);
         }
     }
-    return 0;
-}
-
-bool is_down(SDL_FingerID id)
-{
-    array_for_each_i(input.fingers, i)
-        if (input.fingers[i].id == id)
-            return input.fingers[i].down != 0;
-    return false;
-}
-
-vec2s finger_pos(SDL_FingerID id)
-{
-    array_for_each_i(input.fingers, i) {
-        if (input.fingers[i].id == id)
-        {
-            return (vec2s){ .x = input.fingers[i].x, .y = input.fingers[i].y };
-        }
+    else
+    {
+        pad->local.pos = (vec2s){ 0 };
+        entity_apply_local(pad);
     }
-    return vec2_zero();
-}
 
-vec2s entity_sprite_size(Entity* e)
-{
-    return vec2_scale((vec2s){ .x = sprites[e->sprite.id].w, .y = sprites[e->sprite.id].h }, e->world.scale);
+    input.dpad_dir = vec2_normalize(pad->local.pos);
 }
-
-#define game_text(f, ...) text(mrw_format(f, game.mem.frame, __VA_ARGS__))
 
 void game_update(void)
 {
-    f32 time = (f32)SDL_GetTicksNS() / 1000000000.0f;
-    game.dt = time - game.time;
-    game.dt_accum += game.dt;
-    game.dt_n_samples += 1;
-    if (game.dt_accum > 1.0f) {
-        game.avg_fps = (f32)game.dt_n_samples / game.dt_accum;
-        game.dt_accum -= 0.3f;
-        game.dt_n_samples = 0;
-        mrw_debug_val(game.avg_fps);
-    }
-    game.time = time;
+    game_text("hello everynyan");
+    game_text("fps: {}", time.avg_fps);
 
-    RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
-    {
-        text(str("hello everynyan"));
-        text(mrw_format("fps: {}", game.mem.frame, game.avg_fps));
+    array_for_each_i(input.fingers, i)
+        if (input.fingers[i].down)
+            game_text("finger {} x: {} y: {}", input.fingers[i].id, input.fingers[i].x, input.fingers[i].y);
 
-        Entity* dpad = scene_get_entity(game.scene, game.dpad);
-        vec2s dpad_size = entity_sprite_size(dpad);
-        dpad->world.pos.x = dpad_size.x + 100;
-        dpad->world.pos.y = draw.height - dpad_size.y - 100;
-        entity_apply_world(dpad);
+    game_update_ui();
 
-        f32 dpad_radius = entity_sprite_size(scene_get_entity(game.scene, game.dpad_bg)).x * .5f;
-        Entity* pad = scene_get_entity(game.scene, game.dpad_pad);
-        if ((game.dpad_finger = is_pressed_at(dpad->world.pos.x, dpad->world.pos.y, dpad_radius, game.dpad_finger)))
-        {
-            pad->world.pos = finger_pos(game.dpad_finger);
-            entity_apply_world(pad);
-            if (vec2_norm(pad->local.pos) > dpad_radius)
-            {
-                pad->local.pos = vec2_scale(vec2_normalize(pad->local.pos), dpad_radius);
-                entity_apply_local(pad);
-            }
-        }
-        else
-        {
-            pad->local.pos = (vec2s){ 0 };
-            entity_apply_local(pad);
-        }
-
-        vec2s dir = vec2_scale(pad->local.pos, 1.0f / dpad_radius);
-
-        f32 speed  = 1000.0f;
-        Entity* guy = scene_get_entity(game.scene, game.guy);
-        guy->world.pos = vec2_add(guy->world.pos, vec2_scale(dir, speed * game.dt));
-        entity_apply_world(guy);
-
-        array_for_each_i(input.fingers, i)
-        {
-            if (input.fingers[i].down)
-            {
-                game_text("finger {} x: {} y: {}", input.fingers[i].id, input.fingers[i].x, input.fingers[i].y);
-            }
-        }
-    }
-
-    game.frame++;
+    f32 speed  = 1000.0f;
+    Entity* guy = scene_get_entity(game.scene, game.guy);
+    guy->world.pos = vec2_add(guy->world.pos, vec2_scale(input.dpad_dir, speed * time.dt));
+    entity_apply_world(guy);
 }
 
 void game_tick(void)
@@ -195,28 +147,21 @@ void game_tick(void)
 
     mrw_bump_reset(&game.mem._frame);
 
-    game_update();
+    time_update();
 
-    draw_scene(game.scene, game.time);
+    RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
+    {
+        game_update();
+    }
+
+    draw_scene(game.scene, time.time);
+
+    time.tick++;
 }
 
 void game_destroy(void)
 {
     return;
-}
-
-void on_finger_event(u32 id, f32 x, f32 y, bool down, bool motion)
-{
-    array_for_each_i(input.fingers, i) {
-        if ((down && !input.fingers[i].down) || input.fingers[i].id == id) {
-            if (down) input.fingers[i].down = game.frame;
-            else if (!motion) input.fingers[i].down = 0;
-            input.fingers[i].id = id;
-            input.fingers[i].x = x;
-            input.fingers[i].y = y;
-            break;
-        }
-    }
 }
 
 SDL_AppResult game_on_event(SDL_Event* e)
@@ -238,7 +183,7 @@ SDL_AppResult game_on_event(SDL_Event* e)
         case SDL_EVENT_MOUSE_BUTTON_UP:
         case SDL_EVENT_MOUSE_MOTION:
         case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-            on_finger_event(1, e->motion.x, e->motion.y, e->type == SDL_EVENT_MOUSE_BUTTON_DOWN, e->type == SDL_EVENT_MOUSE_MOTION);
+            input_on_finger(1, e->motion.x, e->motion.y, e->type == SDL_EVENT_MOUSE_BUTTON_DOWN, e->type == SDL_EVENT_MOUSE_MOTION);
         } break;
 
         case SDL_EVENT_FINGER_DOWN:
@@ -246,8 +191,12 @@ SDL_AppResult game_on_event(SDL_Event* e)
         case SDL_EVENT_FINGER_UP:
         case SDL_EVENT_FINGER_CANCELED: {
             i32 w, h; SDL_GetWindowSizeInPixels(draw.window, &w, &h);
-            on_finger_event(e->tfinger.fingerID, e->tfinger.x * w, e->tfinger.y * h, e->type == SDL_EVENT_FINGER_DOWN, e->type == SDL_EVENT_FINGER_MOTION);
+            input_on_finger(e->tfinger.fingerID, e->tfinger.x * w, e->tfinger.y * h, e->type == SDL_EVENT_FINGER_DOWN, e->type == SDL_EVENT_FINGER_MOTION);
         } break;
+
+        case SDL_EVENT_WINDOW_RESIZED:
+
+            break;
 
         default:
             break;

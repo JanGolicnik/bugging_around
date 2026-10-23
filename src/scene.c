@@ -3,25 +3,23 @@
 
 STRUCT(Scene) {
     GENARR(Entity) entities;
-    EntityHandle player;
-    EntityHandle camera;
-    EntityHandle planets[2];
+    EntityHandle root;
 };
 
 Entity* scene_get_entity(Scene* scene, EntityHandle handle) {
-    return genarr_get((scene)->entities, handle);
+    return genarr_get(scene->entities, handle);
+}
+
+Entity* scene_root(Scene* scene) {
+    return genarr_get(scene->entities, scene->root);
 }
 
 #define for_each_entity_children(e, val)\
     for (Entity* val = scene_get_entity((e)->scene, (e)->first_child); val; val = scene_get_entity((e)->scene, val->next_sibling))
 
 void entity_set_hidden(Entity* entity, bool val) {
-    if (val) {
-        entity_enable_components(entity, CT_IsHidden);
-    }
-    else {
-        entity_disable_components(entity, CT_IsHidden);
-    }
+    if (val) entity_enable_components(entity, CT_IsHidden);
+    else     entity_disable_components(entity, CT_IsHidden);
 }
 
 STRUCT(EntityIter) {
@@ -51,17 +49,17 @@ typedef enum {
 
 Transform transform_calculate_world(Transform parent, Transform local) {
     return (Transform) {
-      .pos = vec2_add(parent.pos, vec2_scale(vec2_rotate(local.pos, parent.rot), parent.scale)),
+      .pos = vec2_add(parent.pos, vec2_mul(vec2_rotate(local.pos, parent.rot), parent.scale)),
       .rot = parent.rot + local.rot,
-      .scale = parent.scale * local.scale,
+      .scale = vec2_mul(parent.scale, local.scale),
     };
 }
 
 Transform transform_calculate_local(Transform parent, Transform world) {
     return (Transform){
-      .pos = vec2_sub(vec2_scale(vec2_rotate(world.pos, -parent.rot), 1.0f / parent.scale), parent.pos),
+      .pos = vec2_sub(vec2_div(vec2_rotate(world.pos, -parent.rot), parent.scale), parent.pos),
       .rot = world.rot - parent.rot,
-      .scale = world.scale / parent.scale,
+      .scale = vec2_div(world.scale, parent.scale),
     };
 }
 
@@ -94,21 +92,21 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
     Entity* entity = scene_get_entity(scene, handle);
     entity->scene = scene;
 
-    if (entity->parent.valid) {
-        Entity* parent = scene_get_entity(scene, entity->parent);
-        entity->next_sibling = parent->first_child;
-        parent->first_child = handle;
-    }
+    if (!entity->parent.valid) entity->parent = scene->root;
 
-    if (entity_has(entity, CT_Transform)) {
-        if (entity->local.scale == 0.0f)
+    Entity* parent = scene_get_entity(scene, entity->parent);
+    entity->next_sibling = parent->first_child;
+    parent->first_child = handle;
+
+    if (entity_has(entity, CT_Transform))
+    {
+        if (vec2_norm2(entity->local.scale) == 0.0f)
         {
-            if (entity->world.scale == 0.0f) entity->world.scale = 1.0f;
+            if (vec2_norm2(entity->world.scale) == 0.0f) entity->world.scale = GLMS_VEC2_ONE;
             entity_apply_world(entity);
         }
         else
         {
-            if (entity->local.scale == 0.0f) entity->local.scale = 1.0f;
             entity_apply_local(entity);
         }
     }

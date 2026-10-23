@@ -1,5 +1,3 @@
-#include "SDL3/SDL_hints.h"
-#include "marrow/vektor.h"
 #define BUGGIN_DRAW
 #include "base.c"
 
@@ -14,7 +12,8 @@ cstr common_includes[] = {
 STRUCT(Instance)
 {
     f32 x, y;
-    f32 scale, rot;
+    f32 sx, sy;
+    f32 rot;
     SpriteId sprite;
 };
 
@@ -173,8 +172,8 @@ void draw_init_shaders(void)
                 },
                 .attributes[1] = {
                     .location = 1,
-                    .offset = offsetof(Instance, scale),
-                    .format = ReniVertexFormat_Float32,
+                    .offset = offsetof(Instance, sx),
+                    .format = ReniVertexFormat_Float32x2,
                 },
                 .attributes[2] = {
                     .location = 2,
@@ -295,7 +294,8 @@ void draw_scene(Scene* scene, f32 time)
             vektor_insert(draw.instances, i, (Instance){
                 .x = iter.entity->world.pos.x,
                 .y = iter.entity->world.pos.y,
-                .scale = iter.entity->world.scale,
+                .sx = iter.entity->world.scale.x,
+                .sy = iter.entity->world.scale.y,
                 .rot = iter.entity->world.rot,
                 .sprite = iter.entity->sprite.id
             });

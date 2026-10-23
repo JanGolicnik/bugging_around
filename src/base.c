@@ -31,6 +31,12 @@ static u8Slice read_file(cstr path, Allocator* a) {
 
 #include "atlas.h"
 
+#ifndef BUGGIN_TIME
+#include "time.c"
+
+#ifndef BUGGIN_INPUT
+#include "input.c"
+
 #ifndef BUGGIN_ENTITY
 #include "entity.c"
 
@@ -43,6 +49,8 @@ static u8Slice read_file(cstr path, Allocator* a) {
 #ifndef BUGGIN_GAME
 #include "game.c"
 
+#endif
+#endif
 #endif
 #endif
 #endif

@@ -12,7 +12,7 @@ struct Sprite {
 
 struct InstanceInput {
     @location(0) position: vec2f,
-    @location(1) scale: f32,
+    @location(1) scale: vec2f,
     @location(2) rot: f32,
     @location(3) sprite: u32,
 }
