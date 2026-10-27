@@ -1,5 +1,3 @@
-#include "atlas.h"
-#include "marrow/marrow.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -24,7 +22,7 @@ struct {
         EntityHandle root;
         EntityHandle bg;
         EntityHandle pad;
-        SDL_FingerID finger;
+        FingerId finger;
     } dpad;
 } game;
 
@@ -103,7 +101,7 @@ void game_update_ui(void)
 {
     f32 dpad_radius = entity_sprite_size(scene_get_entity(game.scene, game.dpad.bg)).x * .5f;
     Entity* pad = scene_get_entity(game.scene, game.dpad.pad);
-    if ((game.dpad.finger = is_finger_down_at(pad->world.pos.x, pad->world.pos.y, dpad_radius, game.dpad.finger)))
+    if ((game.dpad.finger = is_finger_down_at(pad->world.pos.x, pad->world.pos.y, dpad_radius, game.dpad.finger)).valid)
     {
         pad->world.pos = finger_pos(game.dpad.finger);
         entity_apply_world(pad);
@@ -127,9 +125,9 @@ void game_update(void)
     game_text("hello everynyan");
     game_text("fps: {}", time.avg_fps);
 
-    array_for_each_i(input.fingers, i)
-        if (input.fingers[i].down)
-            game_text("finger {} x: {} y: {}", input.fingers[i].id, input.fingers[i].x, input.fingers[i].y);
+    GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
+    while (genarr_next_valid(input.fingers, &iter))
+        game_text("finger {} x: {} y: {}", iter.f->id, iter.f->x, iter.f->y);
 
     game_update_ui();
 

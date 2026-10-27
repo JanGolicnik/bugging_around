@@ -6,8 +6,11 @@ STRUCT(Finger)
 {
     SDL_FingerID id;
     f32 x, y;
-    u64 down;
+    u64 down_at;
 };
+
+typedef GENARR_ITER_ALIAS(Finger, f) FingerIter;
+typedef GenarrHandle FingerId;
 
 struct {
     GENARR(Finger) fingers;
@@ -16,58 +19,69 @@ struct {
 
 void input_on_finger(u32 id, f32 x, f32 y, bool down, bool motion)
 {
+    mrw_debug("input on figner {}", id);
+    // find existing finger
+    Finger* f = nullptr;
     GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
     while (genarr_next_valid(input.fingers, &iter))
     {
-        Finger* f = iter.f;
-        if ((down && !f->down) || f->id == id) {
-            if (down) f->down = time.tick;
-            else if (!motion) f->down = 0;
-            f->id = id;
-            f->x = x;
-            f->y = y;
-            break;
-        }
+        if (iter.f->id != id) continue;
+        f = iter.f;
+        break;
     }
-}
 
-SDL_FingerID is_finger_down_at(f32 x, f32 y, f32 radius, SDL_FingerID id)
-{
-    GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
-    while (genarr_next_valid(input.fingers, &iter))
+    // on down add / update already existing
+    if (down)
     {
-        Finger* f = iter.f;
-        if (id && (f->id != id && f->down)) continue;
-        if (!id && (f->down != time.tick || vec2_norm((vec2s){ .x = f->x - x, .y = f->y - y }) > radius)) continue;
-        return f->id;
-    }
-    return 0;
-}
-
-bool is_finger_down(SDL_FingerID id)
-{
-    GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
-    while (genarr_next_valid(input.fingers, &iter))
-    {
-        Finger* f = iter.f;
-        if (f->id == id)
+        if (!f)
         {
-            return f->down != 0;
+            FingerId h = genarr_add(input.fingers, (Finger){ .id = id });
+            f = genarr_get(input.fingers, h);
         }
+        f->down_at = time.tick;
+        f->x = x; f->y = y;
+        return;
     }
-    return false;
+
+    // if finger doesnt exist then we dont do anything
+    if (!f) return;
+
+    if (motion)
+    {
+        f->x = x;
+        f->y = y;
+        return;
+    }
+
+    mrw_debug("REMOVING FINGER !!!");
+    genarr_remove(input.fingers, iter.handle);
 }
 
-vec2s finger_pos(SDL_FingerID id)
+FingerId is_finger_down_at(f32 x, f32 y, f32 radius, FingerId id)
 {
+    if (id.valid)
+    {
+        return genarr_is(input.fingers, id) ? id : (FingerId){ 0 };
+    }
+
     GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
     while (genarr_next_valid(input.fingers, &iter))
     {
         Finger* f = iter.f;
-        if (f->id == id)
-        {
-            return (vec2s){ .x = f->x, .y = f->y };
-        }
+        if (f->down_at == time.tick && vec2_norm((vec2s){{ f->x - x, f->y - y }}) < radius)
+            return iter.handle;
     }
-    return VEC2_ZERO;
+    return (FingerId){ 0 };
+}
+
+bool is_finger_down(FingerId id)
+{
+    return genarr_is(input.fingers, id);
+}
+
+vec2s finger_pos(FingerId id)
+{
+    Finger* f = genarr_get(input.fingers, id);
+    if (!f) return VEC2_ZERO;
+    return (vec2s){{ f->x, f->y }};
 }
