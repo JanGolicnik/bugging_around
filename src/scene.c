@@ -24,16 +24,16 @@ void entity_set_hidden(Entity* entity, bool val) {
 
 STRUCT(EntityIter) {
     GENARR_ITER_ALIAS(Entity, entity);
-    ComponentType include;
-    ComponentType any;
-    ComponentType exclude;
+    Component include;
+    Component any;
+    Component exclude;
 };
 
 bool scene_next_entity(Scene* scene, EntityIter* iter) {
     FLAG_SET(iter->exclude, CT_IsHidden);
     FLAG_CLEAR(iter->exclude, iter->include);
     while (genarr_next_valid(scene->entities, iter)) {
-        ComponentType comps = iter->entity->components;
+        Component comps = iter->entity->components;
         if (FLAG_HAS_ANY(comps, iter->exclude)) continue;
         if (iter->any && FLAG_HAS_ANY(comps, iter->any)) return true;
         if (!FLAG_HAS_ALL(comps, iter->include)) continue;
@@ -121,3 +121,16 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
 
 #define scene_create_entity(_scene, _comps, ...)\
     _scene_create_entity((_scene), genarr_add((_scene)->entities, (Entity){ .components = (_comps), __VA_ARGS__ }))
+
+
+Entity* entity_first_child_with(Entity* e, Component c)
+{
+    for_each_entity_children(e, child)
+    {
+        if (entity_has(child, c))
+        {
+            return child;
+        }
+    }
+    return nullptr;
+}

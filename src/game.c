@@ -1,3 +1,4 @@
+#include "atlas.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -15,7 +16,9 @@ struct {
 
     EntityHandle anchors[9];
 
-    EntityHandle guy;
+    EntityHandle stinkbug;
+    EntityHandle ladybug;
+    EntityHandle centipede;
 
     struct
     {
@@ -37,10 +40,11 @@ Scene* game_new_scene(void) {
 
 vec2s sprite_get_tag_pos(SpriteId id, SpriteTag tag)
 {
-    for (u32 i = 0; sprites[id].tags[i].tag; i++)
+    const SpriteInfo* s = &sprites[id];
+    for (u32 i = 0; s->n_tags; i++)
     {
-        if (sprites[id].tags[i].tag == tag)
-            return (vec2s){ .x = sprites[id].tags[i].x, .y = sprites[id].tags[i].y };
+        const SpriteTagInfo* t = &sprite_tags[s->tags_i + i];
+        if (t->tag == tag) return (vec2s){{ t->x, t->y }};
     }
     return (vec2s){ 0 };
 }
@@ -62,6 +66,34 @@ str _anchor_names[9] = { XAnchors };
 typedef enum { XAnchors } Anchor;
 #undef X
 
+void game_update_bugs(void)
+{
+    EntityIter iter = { .include = CT_Bug };
+    while (scene_next_entity(game.scene, &iter))
+    {
+        Entity* e = iter.entity;
+        if (vec2_distance(e->bug.target, e->world.pos) < 200.0f)
+        {
+            if (e->bug.next_target_at < time.time)
+            {
+                e->bug.target = (vec2s){{ mrw_random_f32(-0.3f, 0.3f) * draw.width, mrw_random_f32(-0.3f, 0.3f) * draw.height }};
+                e->bug.next_target_at = time.time + mrw_random_f32(1.0f, 5.0f);
+            }
+        }
+        else
+        {
+            vec2s dir = vec2_normalize(vec2_sub(e->bug.target, e->world.pos));
+            e->world.rot = atan2(dir.y, dir.x);
+            e->world.pos = vec2_add(e->world.pos, vec2_scale(dir, 200.0f * time.dt));
+            entity_apply_world(e);
+
+            Entity* sprite = entity_first_child_with(e, CT_Sprite);
+            sprite->local.rot = sin(time.time * 10.0f) * 0.1;
+            entity_apply_local(sprite);
+        }
+    }
+}
+
 bool game_init(void)
 {
     game.mem.stable = nullptr;
@@ -74,11 +106,39 @@ bool game_init(void)
         game.anchors[i] = scene_create_entity(game.scene, CT_Transform, .name = _anchor_names[i]);
     }
 
-    game.guy = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("gospod 1"),
-        .sprite.id = SPRITE_S1,
+    { // stinkbug
+        game.stinkbug = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("stinkbug"));
+        EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
+            .parent = game.stinkbug,
+            .sprite.id = SPRITE_STINKBUG,
+            .sprite.layer = Layer_BugsBodies
+        );
+        for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
+        {
+            const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
+            if (t->tag < SpriteTag_leg || t->tag > SpriteTag_leg_6) continue;
+            scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("leg"),
+                .parent = body,
+                .sprite.id = SPRITE_STINKBUG_LEG,
+                .sprite.layer = Layer_BugsLegs,
+                .local.pos = (vec2s){{ t->x, t->y }}
+            );
+        }
+    }
+
+    game.ladybug = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("ladybug"));
+    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
+        .parent = game.ladybug,
+        .sprite.id = SPRITE_LADYBUG,
     );
 
-    game.dpad.root = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad"),
+    game.centipede = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("centipede"));
+    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
+        .parent = game.centipede,
+        .sprite.id = SPRITE_CENTIPEDE,
+    );
+
+    game.dpad.root = scene_create_entity(game.scene, CT_Transform, .name = str("dpad"),
         .parent = game.anchors[Anchor_lb],
         .local.pos = vec2_adds(sprite_size(SPRITE_DPAG_BG), 100.0f),
     );
@@ -131,10 +191,13 @@ void game_update(void)
 
     game_update_ui();
 
-    f32 speed  = 1000.0f;
-    Entity* guy = scene_get_entity(game.scene, game.guy);
-    guy->world.pos = vec2_add(guy->world.pos, vec2_scale(input.dpad_dir, speed * time.dt));
-    entity_apply_world(guy);
+    game_update_bugs();
+
+    // f32 speed  = 250.0f;
+    // Entity* stinkbug = scene_get_entity(game.scene, game.stinkbug);
+    // stinkbug->world.pos = vec2_add(stinkbug->world.pos, vec2_scale(input.dpad_dir, speed * time.dt));
+    // stinkbug->world.rot = atan2(input.dpad_dir.y, input.dpad_dir.x);
+    // entity_apply_world(stinkbug);
 }
 
 cstr indents[] = { "   ", "        ", "            ", "                ", "                    ", "                        ", "                                ", "                                    ", "                                    " };

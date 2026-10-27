@@ -1,3 +1,5 @@
+#include "marrow/marrow.h"
+#include "reni/reni.h"
 #define BUGGIN_DRAW
 #include "base.c"
 
@@ -60,23 +62,30 @@ STRUCT(GPUSprite) {
     f32 uv1[2];
     f32 size_px[2];
     f32 origin_px[2];
+    u32 page;
+    f32 _pad;
 };
 
 void draw_load_sprites(void)
 {
-    cstr path = "./res/atlas/atlas_0.png";
-    u8Slice buf = read_file(path, draw._mem.frame);
-    i32 w, h, c;
-    stbi_uc* img = stbi_load_from_memory(buf.start, slice_size(buf), &w, &h, &c, 4);
     draw.atlas.tex = reni_create_texture(draw.reni, (ReniTextureConfig){
-        .name = str(path),
-        .width = w,
-        .height = h,
-        .format = ReniTextureFormat_RGBA8UnormSrgb,
+        .name = str("atlas"),
+        .width = ATLAS_SIZE,
+        .height = ATLAS_SIZE,
+        .layers = ATLAS_PAGE_COUNT,
+        .format = ReniTextureFormat_RGBA8Unorm,
         .usage = ReniTextureUsage_CopyDst | ReniTextureUsage_TextureBinding
     });
-    reni_texture_write(draw.reni, draw.atlas.tex, (u8Slice)slice_to((u8*)img, w * h * c));
-    stbi_image_free(img);
+
+    for (i32 i = 0; i < ATLAS_PAGE_COUNT; i++)
+    {
+        str path = mrw_format(draw._mem.frame, "./res/atlas/atlas_{}.png\0", i);
+        u8Slice buf = read_file(path.start, draw._mem.frame);
+        i32 w, h, c;
+        stbi_uc* img = stbi_load_from_memory(buf.start, slice_size(buf), &w, &h, &c, 4);
+        reni_texture_write_layer(draw.reni, draw.atlas.tex, (u8Slice)slice_to((u8*)img, w * h * c), i);
+        stbi_image_free(img);
+    }
 
     draw.atlas.layout = reni_create_binding_layout(draw.reni, (ReniBindingLayoutConfig) {
         .entries[0] = {
@@ -86,6 +95,7 @@ void draw_load_sprites(void)
         .entries[1] = {
             .visibility = ReniShaderStage_Fragment,
             .texture.type = ReniSampleType_Float,
+            .texture.array = true
         },
         .entries[2] = {
             .visibility = ReniShaderStage_Vertex,
@@ -100,23 +110,18 @@ void draw_load_sprites(void)
     });
 
     GPUSprite sprites_buffer[SPRITE_COUNT] = { 0 };
-    for (u32 i = 0; i < SPRITE_COUNT; i++)
+    array_for_each_i(sprites, i)
     {
-        vec2s size = {{ sprites[i].w, sprites[i].h }};
+        const SpriteInfo* s = &sprites[i];
+        vec2s size = {{ s->w, s->h }};
+        vec2s origin = vec2_sub(vec2_scale(size, 0.5f), (vec2s){{ s->ox, s->oy }});
         GPUSprite out = {
-            .uv0 = { sprites[i].u0, sprites[i].v0 },
-            .uv1 = { sprites[i].u1, sprites[i].v1 },
+            .uv0 = { s->u0, s->v0 },
+            .uv1 = { s->u1, s->v1 },
             .size_px = { size.x, size.y },
+            .origin_px = { origin.x, origin.y },
+            .page = s->page,
         };
-        for (u32 j = 0; sprites[i].tags[j].tag != SpriteTag_None; j++)
-        {
-            if (sprites[i].tags[j].tag == SpriteTag_origin)
-            {
-                vec2s origin = vec2_sub(vec2_scale(size, 0.5f), (vec2s){{ sprites[i].tags[j].x, sprites[i].tags[j].y }});
-                out.origin_px[0] = origin.x;
-                out.origin_px[1] = origin.y;
-            }
-        }
         sprites_buffer[i] = out;
     }
 

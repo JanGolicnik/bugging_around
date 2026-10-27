@@ -7,7 +7,9 @@ typedef enum {
     CT_Sprite = BIT(2),
     CT_Physics = BIT(3),
     CT_Ui = BIT(4),
-} ComponentType;
+    CT_Bug = BIT(5),
+    CT_BugLegs = BIT(6),
+} Component;
 
 typedef struct Scene Scene;
 
@@ -22,7 +24,8 @@ STRUCT(Transform)
 
 typedef enum {
     Layer_Background,
-    Layer_Guys,
+    Layer_BugsLegs,
+    Layer_BugsBodies,
     Layer_Ui,
     Layer_Count
 } Layer;
@@ -32,7 +35,7 @@ STRUCT(Entity) {
     Scene* scene;
     EntityHandle parent, first_child, next_sibling;
 
-    ComponentType components;
+    Component components;
 
     Transform local, world;
 
@@ -48,17 +51,22 @@ STRUCT(Entity) {
     struct UiC {
         bool _;
     } ui;
+
+    struct {
+        vec2s target;
+        f32 next_target_at;
+    } bug;
 };
 
-void entity_enable_components(Entity* entity, ComponentType components) {
+void entity_enable_components(Entity* entity, Component components) {
     FLAG_SET(entity->components, components);
 }
 
-void entity_disable_components(Entity* entity, ComponentType components) {
+void entity_disable_components(Entity* entity, Component components) {
     FLAG_CLEAR(entity->components, components);
 }
 
-bool entity_has(Entity* entity, ComponentType components) {
+bool entity_has(Entity* entity, Component components) {
     return FLAG_HAS_ALL(entity->components, components);
 }
 
