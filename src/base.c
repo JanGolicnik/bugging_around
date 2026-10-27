@@ -20,6 +20,9 @@
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct.h>
 
+#define VEC2_ONE  GLMS_VEC2_ONE
+#define VEC2_ZERO GLMS_VEC2_ZERO
+
 static u8Slice read_file(cstr path, Allocator* a) {
     FILE* f = fopen(path, "rb");
     fseek(f, 0, SEEK_END); long n = ftell(f);

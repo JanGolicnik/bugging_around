@@ -10,6 +10,16 @@ const FULLSCREEN_QUAD_POSITIONS : array<vec2f, 6> = array<vec2f, 6>(
     vec2f(-1.0,  1.0),
 );
 
+const CENTERED_QUAD_POSITIONS : array<vec2f, 6> = array<vec2f, 6>(
+    vec2f(-0.5, -0.5),
+    vec2f( 0.5, -0.5),
+    vec2f( 0.5,  0.5),
+
+    vec2f(-0.5, -0.5),
+    vec2f( 0.5,  0.5),
+    vec2f(-0.5,  0.5),
+);
+
 fn pcg_hash_u32(x: u32) -> u32 {
     let state = x * 747796405u + 2891336453u;
     let word  = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;

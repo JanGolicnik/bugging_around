@@ -64,14 +64,15 @@ Transform transform_calculate_local(Transform parent, Transform world) {
 }
 
 void entity_transform_apply(Entity* entity, Entity* parent, EntityTransformUpdate update) {
+    bool apply_parent = parent && entity_has(parent, CT_Transform);
     if (update == ETU_LOCAL)
     {
-        entity->world = parent ? transform_calculate_world(parent->world, entity->local) : entity->local;
+        entity->world = apply_parent ? transform_calculate_world(parent->world, entity->local) : entity->local;
         // entity->_matrix = mat4_from_transform(&entity->world);
     }
     else
     {
-        entity->local = parent ? transform_calculate_local(parent->world, entity->world) : entity->world;
+        entity->local = apply_parent ? transform_calculate_local(parent->world, entity->world) : entity->world;
     }
 
     for_each_entity_children(entity, child) {
@@ -94,20 +95,24 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
 
     if (!entity->parent.valid) entity->parent = scene->root;
 
-    Entity* parent = scene_get_entity(scene, entity->parent);
-    entity->next_sibling = parent->first_child;
-    parent->first_child = handle;
+    if (entity->parent.valid)
+    {
+        Entity* parent = scene_get_entity(scene, entity->parent);
+        entity->next_sibling = parent->first_child;
+        parent->first_child = handle;
+    }
 
     if (entity_has(entity, CT_Transform))
     {
-        if (vec2_norm2(entity->local.scale) == 0.0f)
+        if (vec2_norm2(entity->world.scale) == 0.0f)
         {
-            if (vec2_norm2(entity->world.scale) == 0.0f) entity->world.scale = GLMS_VEC2_ONE;
-            entity_apply_world(entity);
+            if (vec2_norm2(entity->local.scale) == 0.0f) entity->local.scale = VEC2_ONE;
+            entity_apply_local(entity);
         }
         else
         {
-            entity_apply_local(entity);
+            if (vec2_norm2(entity->world.scale) == 0.0f) entity->world.scale = VEC2_ONE;
+            entity_apply_world(entity);
         }
     }
 

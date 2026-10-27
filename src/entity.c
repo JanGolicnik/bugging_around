@@ -62,10 +62,12 @@ bool entity_has(Entity* entity, ComponentType components) {
     return FLAG_HAS_ALL(entity->components, components);
 }
 
+vec2s sprite_size(SpriteId id)
+{
+    return (vec2s){{ sprites[id].w, sprites[id].h }};
+}
+
 vec2s entity_sprite_size(Entity* e)
 {
-    return (vec2s) {
-        .x = sprites[e->sprite.id].w * e->world.scale.x,
-        .y = sprites[e->sprite.id].h * e->world.scale.y
-    };
+    return vec2_mul(sprite_size(e->sprite.id), e->world.scale);
 }
