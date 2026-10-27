@@ -1,11 +1,11 @@
 #define NANOSVG_IMPLEMENTATION
 #include "include/nanosvg.h"
-#define NANOSVGRAST_IMPLEMENTATION
-#include "include/nanosvgrast.h"
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "include/stb_rect_pack.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "include/stb_image_write.h"
+
+#include <resvg.h>
 
 #include <marrow/marrow.h>
 #include <marrow/alloc.h>
@@ -33,7 +33,7 @@ STRUCT(Sprite) {
 
 Allocator* a = nullptr;
 
-static char* read_file(cstr path) {
+static str read_file(cstr path) {
     FILE* f = fopen(path, "rb");
     fseek(f, 0, SEEK_END);
     long n = ftell(f);
@@ -42,7 +42,7 @@ static char* read_file(cstr path) {
     fread(buf, 1, (size_t)n, f);
     fclose(f);
     buf[n] = 0;
-    return buf;
+    return (str)slice_to(buf, n);
 }
 
 static void make_ident(char* path, char* out, u32 cap) {
@@ -60,12 +60,16 @@ static void make_ident(char* path, char* out, u32 cap) {
     out[n] = 0;
 }
 
-static void load_sprite(Sprite* s, NSVGrasterizer* rast) {
-    NSVGimage* img = nsvgParse(read_file(s->path), "px", 96.0f);
+static void load_sprite(Sprite* s, resvg_options* opt) {
+    resvg_render_tree* tree;
+    str file = read_file(s->path);
+    i32 err = resvg_parse_tree_from_data(file.start, slice_size(file), opt, &tree);
+    if (err != RESVG_OK) mrw_abort("resvg error {}", err);
+
+    NSVGimage* img = nsvgParse(file.start, "px", 96.0f);
     bool has_origin = false;
     for (NSVGshape* sh = img->shapes; sh; sh = sh->next) {
         if (sh->id[0] != '_') continue;
-        sh->flags &= ~NSVG_FLAGS_VISIBLE;
         has_origin |= c_str_cmp(sh->id, "_origin");
         s->tags[s->n_tags++] = (Tag){
             .tag = sh->id,
@@ -74,12 +78,13 @@ static void load_sprite(Sprite* s, NSVGrasterizer* rast) {
         };
     }
 
+    resvg_size size = resvg_get_image_size(tree);
     if (!has_origin)
     {
         s->tags[s->n_tags++] = (Tag){
             .tag = "_origin",
-            .x = img->width * 0.5f,
-            .y = img->height * 0.5f
+            .x = size.width * 0.5f,
+            .y = size.height * 0.5f
         };
     }
 
@@ -87,7 +92,7 @@ static void load_sprite(Sprite* s, NSVGrasterizer* rast) {
     s->h = (i32)ceilf(img->height);
 
     s->px = mrw_alloc_n(a, u8, (usize)s->w * s->h * 4);
-    nsvgRasterize(rast, img, 0, 0, 1.0f, s->px, s->w, s->h, s->w * 4);
+    resvg_render(tree, resvg_transform_identity(), size.width, size.height, (char*)s->px);
 }
 
 static i32 pack(SpriteSlice sprites) {
@@ -198,7 +203,6 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
 
     fclose(f);
 }
-
 // atlasgen <png_dir> <gen_dir> <file.svg>...
 i32 main(i32 argc, char** argv) {
     argv++;
@@ -209,12 +213,16 @@ i32 main(i32 argc, char** argv) {
     Sprite* s = mrw_alloc_n(a, Sprite, n);
     SpriteSlice sprites = slice_to(s, n);
 
-    NSVGrasterizer* rast = nsvgCreateRasterizer();
+    resvg_options* opt = nullptr;
+    resvg_init_log();
+    opt = resvg_options_create();
+    resvg_options_load_system_fonts(opt);
+
     slice_for_each(sprites, s, Sprite)
     {
         s->path = *(argv++);
         make_ident(s->path, s->ident, sizeof s->ident);
-        load_sprite(s, rast);
+        load_sprite(s, opt);
     }
 
     i32 pages = pack(sprites);

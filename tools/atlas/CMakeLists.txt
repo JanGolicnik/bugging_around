@@ -4,8 +4,14 @@ set(ATLAS_GEN_DIR "${PROJECT_SOURCE_DIR}/src")
 set(ATLAS_HEADER "${ATLAS_GEN_DIR}/atlas.h")
 
 add_executable(atlasgen main.c)
+find_library(RESVG_LIB resvg)
+
 target_include_directories(atlasgen PRIVATE vendor)
-target_link_libraries(atlasgen PRIVATE marrow printccy m)
+
+target_include_directories(atlasgen PRIVATE "./lib/resvg")
+target_link_directories(atlasgen PRIVATE "./lib/resvg")
+
+target_link_libraries(atlasgen PRIVATE marrow printccy m resvg)
 
 file(GLOB ATLAS_SVGS CONFIGURE_DEPENDS "${ATLAS_SVG_DIR}/*.svg")
 
