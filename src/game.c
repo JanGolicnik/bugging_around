@@ -72,8 +72,12 @@ void game_update_bugs(void)
     while (scene_next_entity(game.scene, &iter))
     {
         Entity* e = iter.entity;
+        Entity* sprite = entity_first_child_with(e, CT_Sprite);
         if (vec2_distance(e->bug.target, e->world.pos) < 200.0f)
         {
+            sprite->local.rot += -sprite->local.rot * (1.0f - exp(-10.0f * time.dt));
+            entity_apply_local(sprite);
+
             if (e->bug.next_target_at < time.time)
             {
                 e->bug.target = (vec2s){{ mrw_random_f32(-0.3f, 0.3f) * draw.width, mrw_random_f32(-0.3f, 0.3f) * draw.height }};
@@ -87,7 +91,6 @@ void game_update_bugs(void)
             e->world.pos = vec2_add(e->world.pos, vec2_scale(dir, 200.0f * time.dt));
             entity_apply_world(e);
 
-            Entity* sprite = entity_first_child_with(e, CT_Sprite);
             sprite->local.rot = sin(time.time * 10.0f) * 0.1;
             entity_apply_local(sprite);
         }
@@ -113,15 +116,18 @@ bool game_init(void)
             .sprite.id = SPRITE_STINKBUG,
             .sprite.layer = Layer_BugsBodies
         );
+        vec2s p1 = (vec2s){{ sprites[SPRITE_STINKBUG].ox, sprites[SPRITE_STINKBUG].oy }};
         for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
         {
             const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
             if (t->tag < SpriteTag_leg || t->tag > SpriteTag_leg_6) continue;
+            vec2s p2 = vec2_sub((vec2s){{ t->x, t->y }}, p1);
             scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("leg"),
                 .parent = body,
                 .sprite.id = SPRITE_STINKBUG_LEG,
                 .sprite.layer = Layer_BugsLegs,
-                .local.pos = (vec2s){{ t->x, t->y }}
+                .local.pos = p2,
+                .local.rot = atan2(p2.y, p2.x),
             );
         }
     }

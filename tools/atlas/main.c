@@ -104,8 +104,8 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
 
     s->w  = x1 - x0 + 1;
     s->h  = y1 - y0 + 1;
-    s->ox = size.width  * 0.5f - (f32)x0;
-    s->oy = size.height * 0.5f - (f32)y0;
+    s->ox = size.width  * 0.5f;
+    s->oy = size.height * 0.5f;
     s->px = mrw_alloc_n(a, u8, (usize)s->w * s->h * 4);
     for (i32 y = 0; y < s->h; y++)
     {
@@ -119,8 +119,8 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
     for (NSVGshape* sh = img->shapes; sh; sh = sh->next) {
         if (sh->id[0] != '_') continue;
         Tag* t = &s->tags[s->n_tags];
-        t->x = (sh->bounds[0] + sh->bounds[2]) * 0.5f;
-        t->y = (sh->bounds[1] + sh->bounds[3]) * 0.5f;
+        t->x = (sh->bounds[0] + sh->bounds[2]) * 0.5f - x0;
+        t->y = (sh->bounds[1] + sh->bounds[3]) * 0.5f - y0;
         make_tag_name(sh->id, t->name, sizeof(t->name));
         if (c_str_cmp(t->name, "_origin") == 0)
         {
@@ -131,12 +131,6 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
         s->n_tags++;
     }
 
-    for (i32 i = 0; i < s->n_tags; i++)
-    {
-        Tag* t = &s->tags[i];
-        t->x -= s->ox;
-        t->y -= s->oy * 2;
-    }
     nsvgDelete(img);
 }
 
