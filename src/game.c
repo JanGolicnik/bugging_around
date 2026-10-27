@@ -139,7 +139,7 @@ void game_update(void)
     entity_apply_world(guy);
 }
 
-cstr indents[50] = { "   ", "        ", "            ", "                ", "                    ", "                        ", "                                ", "                                    ", "                                    " };
+cstr indents[] = { "   ", "        ", "            ", "                ", "                    ", "                        ", "                                ", "                                    ", "                                    " };
 void game_print_tree(Entity* e, u32 indent)
 {
     printout("{}{}", indents[indent], e->name);
