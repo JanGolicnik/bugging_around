@@ -121,6 +121,15 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
         Tag* t = &s->tags[s->n_tags];
         t->x = (sh->bounds[0] + sh->bounds[2]) * 0.5f - x0;
         t->y = (sh->bounds[1] + sh->bounds[3]) * 0.5f - y0;
+        i32 n = c_str_len(sh->id);
+        for (i32 i = n-1; i >= 0; i--)
+        {
+            if (sh->id[i] == '$')
+            {
+                sh->id[i] = 0;
+                break;
+            }
+        }
         make_tag_name(sh->id, t->name, sizeof(t->name));
         if (c_str_cmp(t->name, "_origin") == 0)
         {

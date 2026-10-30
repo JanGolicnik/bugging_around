@@ -68,6 +68,7 @@ typedef enum { XAnchors } Anchor;
 
 void game_update_bugs(void)
 {
+    static FingerId f = { 0 };
     EntityIter iter = { .include = CT_Bug };
     while (scene_next_entity(game.scene, &iter))
     {
@@ -80,7 +81,7 @@ void game_update_bugs(void)
 
             if (e->bug.next_target_at < time.time)
             {
-                e->bug.target = (vec2s){{ mrw_random_f32(-0.3f, 0.3f) * draw.width, mrw_random_f32(-0.3f, 0.3f) * draw.height }};
+                e->bug.target = (vec2s){{ mrw_random_f32(-1.0f, 1.0) * draw.width, mrw_random_f32(-0.3f, 0.3f) * draw.height }};
                 e->bug.next_target_at = time.time + mrw_random_f32(1.0f, 5.0f);
             }
         }
@@ -93,6 +94,20 @@ void game_update_bugs(void)
 
             sprite->local.rot = sin(time.time * 10.0f) * 0.1;
             entity_apply_local(sprite);
+
+            EntityIter iter = { .include = CT_Leg };
+            while (scene_next_entity(game.scene, &iter))
+            {
+                iter.entity->local.rot = sin(time.time * 100.0f) * 0.1f;
+                entity_apply_local(iter.entity);
+            }
+        }
+
+        if (is_finger_down_at(e->world.pos.x, e->world.pos.y, 400.0f, &f))
+        {
+            finger_consume(f);
+            e->world.scale.y *= -1.0;
+            entity_apply_world(e);
         }
     }
 }
@@ -120,14 +135,15 @@ bool game_init(void)
         for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
         {
             const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
-            if (t->tag < SpriteTag_leg || t->tag > SpriteTag_leg_6) continue;
+            if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
             vec2s p2 = vec2_sub((vec2s){{ t->x, t->y }}, p1);
-            scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("leg"),
+            scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
                 .parent = body,
                 .sprite.id = SPRITE_STINKBUG_LEG,
                 .sprite.layer = Layer_BugsLegs,
                 .local.pos = p2,
                 .local.rot = atan2(p2.y, p2.x),
+                .local.scale = (vec2s){{ 1.0f, t->tag == SpriteTag_leg_left ? -1.0f : 1.0f }}
             );
         }
     }
@@ -167,7 +183,7 @@ void game_update_ui(void)
 {
     f32 dpad_radius = entity_sprite_size(scene_get_entity(game.scene, game.dpad.bg)).x * .5f;
     Entity* pad = scene_get_entity(game.scene, game.dpad.pad);
-    if ((game.dpad.finger = is_finger_down_at(pad->world.pos.x, pad->world.pos.y, dpad_radius, game.dpad.finger)).valid)
+    if (is_finger_down_at(pad->world.pos.x, pad->world.pos.y, dpad_radius, &game.dpad.finger))
     {
         pad->world.pos = finger_pos(game.dpad.finger);
         entity_apply_world(pad);
@@ -249,17 +265,16 @@ void game_destroy(void)
 SDL_AppResult game_on_event(SDL_Event* e)
 {
     switch (e->type) {
-        case SDL_EVENT_QUIT:
-            return SDL_APP_SUCCESS;
-        case SDL_EVENT_WILL_ENTER_BACKGROUND:
+        case SDL_EVENT_QUIT: return SDL_APP_SUCCESS;
+        case SDL_EVENT_WILL_ENTER_BACKGROUND: {
             game.in_background = true;
             if (draw.surface.h.valid)
                 reni_release_surface(draw.reni, draw.surface);
             draw.surface = (ReniSurface){ 0 };
-            break;
-        case SDL_EVENT_DID_ENTER_FOREGROUND:
+        } break;
+        case SDL_EVENT_DID_ENTER_FOREGROUND: {
             game.in_background = false;
-            break;
+        } break;
 
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -277,17 +292,21 @@ SDL_AppResult game_on_event(SDL_Event* e)
             input_on_finger(e->tfinger.fingerID, (e->tfinger.x - 0.5f) * w, (e->tfinger.y - 0.5f) * h, e->type == SDL_EVENT_FINGER_DOWN, e->type == SDL_EVENT_FINGER_MOTION);
         } break;
 
-        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP: {
+
+        } break;
+
+        case SDL_EVENT_WINDOW_RESIZED: {
             array_for_each_i(game.anchors, i)
             {
                 Entity* anchor = scene_get_entity(game.scene, game.anchors[i]);
                 anchor->world.pos = (vec2s){{ (float)e->window.data1 * _anchors[i].x, (float)e->window.data2 * _anchors[i].y }};
                 entity_apply_world(anchor);
             }
-            break;
+        } break;
 
-        default:
-            break;
+        default: break;
     }
     return SDL_APP_CONTINUE;
 }

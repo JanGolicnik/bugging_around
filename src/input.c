@@ -57,11 +57,19 @@ void input_on_finger(u32 id, f32 x, f32 y, bool down, bool motion)
     genarr_remove(input.fingers, iter.handle);
 }
 
-FingerId is_finger_down_at(f32 x, f32 y, f32 radius, FingerId id)
+void finger_consume(FingerId finger)
 {
-    if (id.valid)
+    Finger* f = genarr_get(input.fingers, finger);
+    if (!f) return;
+    f->down_at--;
+}
+
+bool is_finger_down_at(f32 x, f32 y, f32 radius, FingerId* out)
+{
+    if (out->valid)
     {
-        return genarr_is(input.fingers, id) ? id : (FingerId){ 0 };
+        if (!genarr_is(input.fingers, *out)) *out = (FingerId){ 0 };
+        return out->valid;
     }
 
     GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
@@ -69,9 +77,12 @@ FingerId is_finger_down_at(f32 x, f32 y, f32 radius, FingerId id)
     {
         Finger* f = iter.f;
         if (f->down_at == time.tick && vec2_norm((vec2s){{ f->x - x, f->y - y }}) < radius)
-            return iter.handle;
+        {
+            *out = iter.handle;
+            break;
+        }
     }
-    return (FingerId){ 0 };
+    return out->valid;
 }
 
 bool is_finger_down(FingerId id)

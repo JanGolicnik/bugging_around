@@ -7,12 +7,8 @@
 typedef enum {
     SpriteTag_None,
     SpriteTag_attach,
-    SpriteTag_leg,
-    SpriteTag_leg_2,
-    SpriteTag_leg_3,
-    SpriteTag_leg_4,
-    SpriteTag_leg_5,
-    SpriteTag_leg_6,
+    SpriteTag_leg_left,
+    SpriteTag_leg_right,
     SpriteTag_Count
 } SpriteTag;
 
@@ -44,12 +40,12 @@ typedef struct {
 
 static const SpriteTagInfo sprite_tags[] = {
     { SpriteTag_attach, 351.500000, 204.000000 },
-    { SpriteTag_leg, 167.265015, 47.500000 },
-    { SpriteTag_leg_2, 110.765007, 38.000000 },
-    { SpriteTag_leg_3, 109.765015, 169.000000 },
-    { SpriteTag_leg_4, 166.265015, 159.500000 },
-    { SpriteTag_leg_5, 203.764999, 165.000000 },
-    { SpriteTag_leg_6, 204.265015, 42.500000 },
+    { SpriteTag_leg_right, 109.765015, 169.000000 },
+    { SpriteTag_leg_right, 166.265015, 159.500000 },
+    { SpriteTag_leg_right, 203.764999, 165.000000 },
+    { SpriteTag_leg_left, 110.765007, 38.000000 },
+    { SpriteTag_leg_left, 167.265015, 47.500000 },
+    { SpriteTag_leg_left, 204.265015, 42.500000 },
 };
 
 static const SpriteInfo sprites[SPRITE_COUNT] = {

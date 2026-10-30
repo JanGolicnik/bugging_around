@@ -9,6 +9,7 @@ typedef enum {
     CT_Ui = BIT(4),
     CT_Bug = BIT(5),
     CT_BugLegs = BIT(6),
+    CT_Leg = BIT(7),
 } Component;
 
 typedef struct Scene Scene;
