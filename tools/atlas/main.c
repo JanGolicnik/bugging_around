@@ -21,7 +21,8 @@
 
 STRUCT(Tag) {
     char name[64];
-    f32  x, y;
+    f32 x, y;
+    f32 rot;
 };
 
 STRUCT(Sprite) {
@@ -119,20 +120,32 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
     for (NSVGshape* sh = img->shapes; sh; sh = sh->next) {
         if (sh->id[0] != '_') continue;
         Tag* t = &s->tags[s->n_tags];
-        t->x = (sh->bounds[0] + sh->bounds[2]) * 0.5f - x0;
-        t->y = (sh->bounds[1] + sh->bounds[3]) * 0.5f - y0;
+
+        float* p = sh->paths->pts;
+        float vx[3] = { p[0], p[6],  p[12] };
+        float vy[3] = { p[1], p[7],  p[13] };
+        float cx = (vx[0] + vx[1] + vx[2]) * (1.0f / 3.0f);
+        float cy = (vy[0] + vy[1] + vy[2]) * (1.0f / 3.0f);
+
+        i32 a = 0;
+        float best = 0.0f;
+        for (i32 k = 0; k < 3; k++) {
+            float dx = vx[k] - cx, dy = vy[k] - cy;
+            float d = dx*dx + dy*dy;
+            if (d > best) { best = d; a = k; }
+        }
+
+        t->x   = cx - x0;
+        t->y   = cy - y0;
+        t->rot = 3.14 - atan2f(-(vy[a] - cy), vx[a] - cx);
+
         i32 n = c_str_len(sh->id);
-        for (i32 i = n-1; i >= 0; i--)
-        {
-            if (sh->id[i] == '$')
-            {
-                sh->id[i] = 0;
-                break;
-            }
+        for (i32 i = n-1; i >= 0; i--) {
+            if (sh->id[i] == '$') { sh->id[i] = 0; break; }
         }
         make_tag_name(sh->id, t->name, sizeof(t->name));
-        if (c_str_cmp(t->name, "_origin") == 0)
-        {
+
+        if (c_str_cmp(t->name, "_origin") == 0) {
             s->ox = t->x;
             s->oy = t->y;
             continue;
@@ -241,7 +254,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     printfb(f, "    SPRITE_COUNT\n} SpriteId;\n\n");
 
     printfb(f,
-        "typedef struct %{ SpriteTag tag; f32 x, y; } SpriteTagInfo;\n"
+        "typedef struct %{ SpriteTag tag; f32 x, y, rot; } SpriteTagInfo;\n"
         "typedef struct %{\n"
         "    i32 page;\n"
         "    i32 x, y, w, h;\n"
@@ -253,7 +266,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     printfb(f, "static const SpriteTagInfo sprite_tags[] = %{\n");
     slice_for_each(sprites, s, Sprite)
         for (u32 i = 0; i < s->n_tags; i++)
-            printfb(f, "    %{ SpriteTag{}, {}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y);
+            printfb(f, "    %{ SpriteTag{}, {}, {}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y, s->tags[i].rot);
     printfb(f, "};\n\n");
 
     printfb(f, "static const SpriteInfo sprites[SPRITE_COUNT] = %{\n");

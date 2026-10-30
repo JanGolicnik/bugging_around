@@ -95,12 +95,12 @@ void game_update_bugs(void)
             sprite->local.rot = sin(time.time * 10.0f) * 0.1;
             entity_apply_local(sprite);
 
-            EntityIter iter = { .include = CT_Leg };
-            while (scene_next_entity(game.scene, &iter))
-            {
-                iter.entity->local.rot = sin(time.time * 100.0f) * 0.1f;
-                entity_apply_local(iter.entity);
-            }
+            // EntityIter iter = { .include = CT_Leg };
+            // while (scene_next_entity(game.scene, &iter))
+            // {
+            //     iter.entity->local.rot = sin(time.time * 100.0f) * 0.1f;
+            //     entity_apply_local(iter.entity);
+            // }
         }
 
         if (is_finger_down_at(e->world.pos.x, e->world.pos.y, 400.0f, &f))
@@ -135,15 +135,15 @@ bool game_init(void)
         for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
         {
             const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
-            if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
+            if (t->tag != SpriteTag_left && t->tag != SpriteTag_right) continue;
             vec2s p2 = vec2_sub((vec2s){{ t->x, t->y }}, p1);
             scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
                 .parent = body,
-                .sprite.id = SPRITE_STINKBUG_LEG,
+                .sprite.id = SPRITE_LINE,
                 .sprite.layer = Layer_BugsLegs,
                 .local.pos = p2,
-                .local.rot = atan2(p2.y, p2.x),
-                .local.scale = (vec2s){{ 1.0f, t->tag == SpriteTag_leg_left ? -1.0f : 1.0f }}
+                .local.rot = t->rot,
+                // .local.scale = (vec2s){{ 1.0f, t->tag == SpriteTag_leg_left ? -1.0f : 1.0f }}
             );
         }
     }
