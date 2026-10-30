@@ -121,23 +121,23 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
         if (sh->id[0] != '_') continue;
         Tag* t = &s->tags[s->n_tags];
 
-        float* p = sh->paths->pts;
-        float vx[3] = { p[0], p[6],  p[12] };
-        float vy[3] = { p[1], p[7],  p[13] };
-        float cx = (vx[0] + vx[1] + vx[2]) * (1.0f / 3.0f);
-        float cy = (vy[0] + vy[1] + vy[2]) * (1.0f / 3.0f);
+        f32* p = sh->paths->pts;
+        f32 vx[3] = { p[0], p[6],  p[12] };
+        f32 vy[3] = { p[1], p[7],  p[13] };
+        f32 cx = (vx[0] + vx[1] + vx[2]) / 3.0f;
+        f32 cy = (vy[0] + vy[1] + vy[2]) / 3.0f;
 
-        i32 a = 0;
-        float best = 0.0f;
-        for (i32 k = 0; k < 3; k++) {
-            float dx = vx[k] - cx, dy = vy[k] - cy;
-            float d = dx*dx + dy*dy;
-            if (d > best) { best = d; a = k; }
+        i32 farthest_i = 0;
+        f32 dist = 0.0f;
+        for (i32 i = 0; i < 3; i++) {
+            f32 dx = vx[i] - cx, dy = vy[i] - cy;
+            f32 d = dx*dx + dy*dy;
+            if (d > dist) { dist = d; farthest_i = i; }
         }
 
-        t->x   = cx - x0;
-        t->y   = cy - y0;
-        t->rot = 3.14 - atan2f(-(vy[a] - cy), vx[a] - cx);
+        t->x = cx - x0;
+        t->y = cy - y0;
+        t->rot = 3.14 / 2 - atan2f(-(vy[farthest_i] - cy), vx[farthest_i] - cx);
 
         i32 n = c_str_len(sh->id);
         for (i32 i = n-1; i >= 0; i--) {
