@@ -1,3 +1,4 @@
+#include "atlas.h"
 #define BUGGIN_ENTITY
 #include "base.c"
 
@@ -10,6 +11,7 @@ typedef enum {
     CT_Bug = BIT(5),
     CT_BugLegs = BIT(6),
     CT_Leg = BIT(7),
+    CT_Link = BIT(8),
 } Component;
 
 typedef struct Scene Scene;
@@ -57,6 +59,11 @@ STRUCT(Entity) {
         vec2s target;
         f32 next_target_at;
     } bug;
+
+    struct {
+        EntityHandle follow;
+        f32 dist;
+    } link;
 };
 
 void entity_enable_components(Entity* entity, Component components) {
@@ -79,4 +86,16 @@ vec2s sprite_size(SpriteId id)
 vec2s entity_sprite_size(Entity* e)
 {
     return vec2_mul(sprite_size(e->sprite.id), e->world.scale);
+}
+
+SpriteTagInfo* sprite_get_tag(SpriteId sprite, SpriteTag tag)
+{
+    const SpriteInfo* s = &sprites[sprite];
+    for (u32 i = 0; i < s->n_tags; i++)
+    {
+        const SpriteTagInfo* t = &sprite_tags[s->tags_i + i];
+        if (t->tag == tag)
+            return (SpriteTagInfo*)t;
+    }
+    return nullptr;
 }

@@ -1,0 +1,35 @@
+<svg width="79" height="309" viewBox="0 0 79 309" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="centipede_body_small">
+<g id="Group 18">
+<g id="thing">
+<path id="_leg_right$" d="M38.7306 227L34.4005 209L43.0607 209L38.7306 227Z" fill="#D9D9D9"/>
+</g>
+</g>
+<g id="Group 19">
+<g id="thing_2">
+<path id="_leg_left$" d="M38.7306 81L43.0607 99H34.4005L38.7306 81Z" fill="#D9D9D9"/>
+</g>
+</g>
+<g id="Rectangle 1" filter="url(#filter0_d_78_1908)">
+<path d="M60.4923 103.533C65.0866 110.722 65.5971 198.356 60.4923 204.176C55.3874 209.995 23.9928 211.364 19.1432 204.176C14.2936 196.987 11.7412 111.064 19.1432 103.533C26.5452 96.002 55.8979 96.3442 60.4923 103.533Z" fill="#762E07" stroke-width="21" stroke="#4B0000"/>
+</g>
+<g id="origin">
+<circle id="_origin" cx="64.132" cy="154" r="4" transform="rotate(90 64.132 154)" fill="#D9D9D9"/>
+</g>
+<g id="asd">
+<circle id="_follow" cx="15.132" cy="154" r="4" transform="rotate(90 15.132 154)" fill="#D9D9D9"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_78_1908" x="0" y="87.5123" width="78.632" height="140.055" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_78_1908"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_78_1908" result="shape"/>
+</filter>
+</defs>
+</svg>

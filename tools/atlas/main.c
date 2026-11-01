@@ -153,6 +153,12 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
         s->n_tags++;
     }
 
+    for (i32 i = 0; i< s->n_tags; i++)
+    {
+        s->tags[i].x -= s->ox;
+        s->tags[i].y -= s->oy;
+    }
+
     nsvgDelete(img);
 }
 
@@ -265,7 +271,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
 
     printfb(f, "static const SpriteTagInfo sprite_tags[] = %{\n");
     slice_for_each(sprites, s, Sprite)
-        for (u32 i = 0; i < s->n_tags; i++)
+        for (i32 i = s->n_tags - 1; i >= 0; i--)
             printfb(f, "    %{ SpriteTag{}, {}, {}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y, s->tags[i].rot);
     printfb(f, "};\n\n");
 

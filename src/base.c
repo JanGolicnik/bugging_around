@@ -32,6 +32,19 @@ static u8Slice read_file(cstr path, Allocator* a) {
     return (u8Slice)slice_to(buf, n);
 }
 
+static f32 vec2_between(vec2s a, vec2s b)
+{
+    return atan2(a.x * b.y - b.x * a.y, a.x * b.y + b.x * a.y);
+}
+
+static f32 vec2_angle_to(vec2s from, vec2s to)
+{
+    vec2s d = vec2_normalize(vec2_sub(from, to));
+    return atan2(d.y, d.x);
+}
+
+#define vec2_len vec2_norm
+
 #include "atlas.h"
 
 #ifndef BUGGIN_TIME

@@ -134,3 +134,19 @@ Entity* entity_first_child_with(Entity* e, Component c)
     }
     return nullptr;
 }
+
+cstr indents[] = { "   ", "        ", "            ", "                ", "                    ", "                        ", "                                ", "                                    ", "                                    " };
+void scene_print_tree(Entity* e, u32 indent)
+{
+   printout("{}{}", indents[indent], e->name);
+   if (entity_has(e, CT_Transform))
+   {
+       printout("(x:{.1f} y:{.1f} w:{.1f} h:{.1f})", e->world.pos.x, e->world.pos.y, e->world.scale.x, e->world.scale.y);
+   }
+   printout("\n");
+
+   for_each_entity_children(e, child)
+   {
+       scene_print_tree(child, indent + 1);
+   }
+}
