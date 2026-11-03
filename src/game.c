@@ -1,5 +1,3 @@
-#include "atlas.h"
-#include "marrow/marrow.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -67,18 +65,47 @@ str _anchor_names[9] = { XAnchors };
 typedef enum { XAnchors } Anchor;
 #undef X
 
+void game_update_turrets(void)
+{
+    EntityIter iter = { .include = CT_Turret };
+    while (scene_next_entity(game.scene, &iter))
+    {
+        Entity* e = iter.entity;
+        FingerIter finger_iter = { 0 };
+        while (genarr_next_valid(input.fingers, &finger_iter))
+        {
+            Finger* f = finger_iter.f;
+            vec2s dir = vec2_normalize(vec2_sub((vec2s){{ f->x, f->y }}, e->world.pos));
+            e->world.rot = atan2(dir.y, dir.x);
+            entity_apply_world(e);
+            break;
+        }
+    }
+}
+
 void game_update_bugs(void)
 {
     static FingerId f = { 0 };
+    static EntityHandle held = { 0 };
     EntityIter iter = { .include = CT_Bug };
     while (scene_next_entity(game.scene, &iter))
     {
         Entity* e = iter.entity;
         Entity* sprite = entity_first_child_with(e, CT_Sprite);
 
-        if (is_finger_down_at(e->world.pos.x, e->world.pos.y, 400.0f, &f))
+        if (!held.valid && is_finger_down_at(e->world.pos.x, e->world.pos.y, 100.0f, &f))
         {
             finger_consume(f);
+            held = iter.handle;
+        }
+
+        if (is_finger_up(f))
+        {
+            held = (EntityHandle){ 0 };
+        }
+
+        if (held.i == iter.handle.i)
+        {
             e->bug.target = finger_pos(f);
         }
 
@@ -86,13 +113,6 @@ void game_update_bugs(void)
         {
             sprite->local.rot += -sprite->local.rot * (1.0f - exp(-10.0f * time.dt));
             entity_apply_local(sprite);
-
-            EntityIter iter = { .include = CT_Leg };
-            while (scene_next_entity(game.scene, &iter))
-            {
-                iter.entity->local.rot += -iter.entity->local.rot * (1.0f - exp(-10.0f * time.dt));
-                entity_apply_local(iter.entity);
-            }
 
             if (e->bug.next_target_at < time.time)
             {
@@ -142,18 +162,38 @@ bool game_init(void)
         for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
         {
             const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
-            if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
-            EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
-                .parent = body,
-                .local.pos = (vec2s){{ t->x, t->y }},
-                .local.rot = t->rot,
-                .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
-            );
-            scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
-                .parent = joint,
-                .sprite.id = SPRITE_STINKBUG_LEG,
-                .sprite.layer = Layer_BugsLegs,
-            );
+            if (t->tag == SpriteTag_leg_left || t->tag == SpriteTag_leg_right)
+            {
+                EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
+                    .parent = body,
+                    .local.pos = (vec2s){{ t->x, t->y }},
+                    .local.rot = t->rot,
+                    .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
+                );
+                scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
+                    .parent = joint,
+                    .sprite.id = SPRITE_STINKBUG_LEG,
+                    .sprite.layer = Layer_BugsLegs,
+                );
+            }
+            else if (t->tag == SpriteTag_turret)
+            {
+                EntityHandle turret = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Turret, .name = str("cannon !!"),
+                    .parent = body,
+                    .local.pos = (vec2s){{ t-> x, t->y }},
+                    .local.rot = t->rot,
+                    .sprite.id = SPRITE_CANNON1,
+                    .sprite.layer = Layer_Turrets,
+                );
+                SpriteTagInfo* t = sprite_get_tag(SPRITE_CANNON1, SpriteTag_turret);
+                scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("barrel"),
+                    .parent = turret,
+                    .local.pos = (vec2s){{ t-> x, t->y }},
+                    .local.rot = t->rot,
+                    .sprite.id = SPRITE_CANNON1_BARREL,
+                    .sprite.layer = Layer_Barrels,
+                );
+            }
         }
     }
 
@@ -183,7 +223,7 @@ bool game_init(void)
     }
 
     { // centipede
-        EntityHandle next = game.centipede = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("centipede"), .sprite.id = SPRITE_CENTIPEDE);
+        game.centipede = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("centipede"), .sprite.id = SPRITE_CENTIPEDE);
         scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
             .parent = game.centipede,
             .sprite.id = SPRITE_CENTIPEDE,
@@ -202,17 +242,17 @@ bool game_init(void)
             else if (t->tag == SpriteTag_spine_tail) sprite = SPRITE_CENTIPEDE_TAIL;
             else continue;
 
-            segments[n_segments++] = next = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Link, .name = str("body"),
+            EntityHandle body = segments[n_segments++] = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Link, .name = str("body"),
                 .sprite.id = sprite,
                 .sprite.layer = Layer_BugsBodies,
             );
 
             for (u32 j = 0; j < sprites[sprite].n_tags; j++)
             {
-                const SpriteTagInfo* t = &sprite_tags[sprites[sprite].tags_i + i];
+                const SpriteTagInfo* t = &sprite_tags[sprites[sprite].tags_i + j];
                 if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
                 EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
-                    .parent = next,
+                    .parent = body,
                     .local.pos = (vec2s){{ t->x, t->y }},
                     .local.rot = t->rot,
                     .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
@@ -229,7 +269,8 @@ bool game_init(void)
         {
             Entity* e = scene_get_entity(game.scene, segments[i]);
             e->link.follow = i == (n_segments - 1) ? game.centipede : segments[i + 1];
-            e->link.dist =  vec2_norm(sprite_get_tag_pos(scene_get_entity(game.scene, e->link.follow)->sprite.id, SpriteTag_follow)) * 0.9f;
+            Entity* follow = scene_get_entity(game.scene, e->link.follow);
+            e->link.dist =  vec2_norm(sprite_get_tag_pos(follow->sprite.id, SpriteTag_follow)) * 0.9f;
         }
     }
 
@@ -315,6 +356,8 @@ void game_update(void)
     game_update_ui();
 
     game_update_bugs();
+
+    game_update_turrets();
 
     game_update_links();
 

@@ -12,6 +12,7 @@ typedef enum {
     CT_BugLegs = BIT(6),
     CT_Leg = BIT(7),
     CT_Link = BIT(8),
+    CT_Turret = BIT(9),
 } Component;
 
 typedef struct Scene Scene;
@@ -29,6 +30,8 @@ typedef enum {
     Layer_Background,
     Layer_BugsLegs,
     Layer_BugsBodies,
+    Layer_Barrels,
+    Layer_Turrets,
     Layer_Ui,
     Layer_Count
 } Layer;

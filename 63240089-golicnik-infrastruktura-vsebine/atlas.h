@@ -1,0 +1,118 @@
+#pragma once
+
+#include <marrow/marrow.h>
+
+#define ATLAS_PAGE_COUNT 2
+#define ATLAS_SIZE 2048
+typedef enum {
+    SpriteTag_None,
+    SpriteTag_follow,
+    SpriteTag_leg_left,
+    SpriteTag_leg_right,
+    SpriteTag_spine_big,
+    SpriteTag_spine_medium,
+    SpriteTag_spine_small,
+    SpriteTag_spine_tail,
+    SpriteTag_turret,
+    SpriteTag_Count
+} SpriteTag;
+
+typedef enum {
+    SPRITE_BUGGIN____AROUND,
+    SPRITE_ARENA,
+    SPRITE_CANNON1,
+    SPRITE_CANNON1_BARREL,
+    SPRITE_CANNON2,
+    SPRITE_CANNON2_BARREL,
+    SPRITE_CANNON3,
+    SPRITE_CANNON3_BARREL,
+    SPRITE_CENTIPEDE,
+    SPRITE_CENTIPEDE_BODY_BIG,
+    SPRITE_CENTIPEDE_BODY_MEDIUM,
+    SPRITE_CENTIPEDE_BODY_SMALL,
+    SPRITE_CENTIPEDE_LEG,
+    SPRITE_CENTIPEDE_TAIL,
+    SPRITE_DPAD_PAD,
+    SPRITE_DPAG_BG,
+    SPRITE_ENTER,
+    SPRITE_LADYBUG,
+    SPRITE_LADYBUG_LEG,
+    SPRITE_LEAVES,
+    SPRITE_LINE,
+    SPRITE_STINKBUG,
+    SPRITE_STINKBUG_LEG,
+    SPRITE_THE_METAMORPH,
+    SPRITE_COUNT
+} SpriteId;
+
+typedef struct { SpriteTag tag; f32 x, y, rot; } SpriteTagInfo;
+typedef struct {
+    i32 page;
+    i32 x, y, w, h;
+    i32 ox, oy;
+    f64 u0, v0, u1, v1;
+    u32 tags_i, n_tags;
+} SpriteInfo;
+
+static const SpriteTagInfo sprite_tags[] = {
+    { SpriteTag_turret, 0.000000, -40.000000, -0.000796 },
+    { SpriteTag_turret, -11.000000, -36.000000, -0.000796 },
+    { SpriteTag_turret, 11.000000, -36.000000, -0.000796 },
+    { SpriteTag_follow, -40.333313, 0.716003, 2.819050 },
+    { SpriteTag_spine_small, -31.000000, 1.715973, 1.570003 },
+    { SpriteTag_spine_big, -69.000000, 0.715973, 1.570003 },
+    { SpriteTag_spine_big, -168.000000, 0.715973, 1.570003 },
+    { SpriteTag_spine_big, -272.000000, 0.715973, 1.570003 },
+    { SpriteTag_spine_medium, -388.000000, 1.715973, 1.570003 },
+    { SpriteTag_spine_tail, -462.000000, 1.715973, 1.570003 },
+    { SpriteTag_follow, -117.833336, 0.000000, 2.819046 },
+    { SpriteTag_leg_right, -58.500000, 71.000000, 3.140796 },
+    { SpriteTag_leg_left, -58.500000, -70.000000, -0.000796 },
+    { SpriteTag_follow, -78.333336, -1.000000, 2.819046 },
+    { SpriteTag_leg_right, -35.000000, 56.000000, 3.140796 },
+    { SpriteTag_leg_left, -35.000000, -57.000000, -0.000796 },
+    { SpriteTag_follow, -48.201527, 0.395996, 2.819046 },
+    { SpriteTag_leg_right, -21.868164, 62.395996, 3.140799 },
+    { SpriteTag_leg_left, -21.868164, -61.603935, -0.000799 },
+    { SpriteTag_leg_right, -26.016983, 44.000000, 3.140798 },
+    { SpriteTag_leg_left, -26.016983, -45.000000, -0.000798 },
+    { SpriteTag_leg_right, 75.843674, -98.552872, 4.460490 },
+    { SpriteTag_leg_left, -2.764664, -114.504196, 2.536845 },
+    { SpriteTag_leg_left, -96.000992, -100.572266, 1.569997 },
+    { SpriteTag_leg_left, 75.843674, 59.759689, -1.320488 },
+    { SpriteTag_leg_right, -2.764664, 75.711319, 0.603140 },
+    { SpriteTag_leg_right, -96.000992, 61.779007, 1.570000 },
+    { SpriteTag_leg_right, 14.873001, 63.699005, 0.860985 },
+    { SpriteTag_leg_right, 38.728683, 60.332001, -0.373246 },
+    { SpriteTag_leg_right, -59.235008, 79.641998, 1.570000 },
+    { SpriteTag_leg_left, 14.873001, -61.048996, 2.279015 },
+    { SpriteTag_leg_left, 38.728683, -57.682007, 3.513247 },
+    { SpriteTag_leg_left, -59.235008, -76.991997, 1.570000 },
+};
+
+static const SpriteInfo sprites[SPRITE_COUNT] = {
+    { 1, 1078, 2, 878, 478, 464, 242, 0.526367, 0.000977, 0.955078, 0.234375, 0, 0 },
+    { 0, 875, 2, 1038, 773, 519, 386, 0.427246, 0.000977, 0.934082, 0.378418, 0, 0 },
+    { 0, 1803, 1518, 100, 100, 50, 90, 0.880371, 0.741211, 0.929199, 0.790039, 0, 1 },
+    { 0, 1955, 1114, 47, 143, 24, 127, 0.954590, 0.543945, 0.977539, 0.613770, 1, 0 },
+    { 0, 1938, 1510, 102, 104, 51, 90, 0.946289, 0.737305, 0.996094, 0.788086, 1, 2 },
+    { 0, 2006, 1114, 34, 143, 17, 127, 0.979492, 0.543945, 0.996094, 0.613770, 3, 0 },
+    { 0, 1803, 1275, 122, 124, 61, 116, 0.880371, 0.622559, 0.939941, 0.683105, 3, 0 },
+    { 0, 1803, 1403, 98, 111, 49, 93, 0.880371, 0.685059, 0.928223, 0.739258, 3, 0 },
+    { 1, 2, 2, 561, 552, 468, 275, 0.000977, 0.000977, 0.274902, 0.270508, 3, 7 },
+    { 0, 1803, 957, 148, 169, 132, 82, 0.880371, 0.467285, 0.952637, 0.549805, 10, 3 },
+    { 0, 1803, 1130, 108, 141, 92, 69, 0.880371, 0.551758, 0.933105, 0.620605, 13, 3 },
+    { 0, 1955, 957, 79, 153, 62, 74, 0.954590, 0.467285, 0.993164, 0.541992, 16, 3 },
+    { 0, 1942, 1391, 63, 115, 31, 103, 0.948242, 0.679199, 0.979004, 0.735352, 19, 0 },
+    { 0, 653, 1731, 259, 117, 243, 57, 0.318848, 0.845215, 0.445312, 0.902344, 19, 2 },
+    { 0, 1803, 779, 174, 174, 87, 87, 0.880371, 0.380371, 0.965332, 0.465332, 21, 0 },
+    { 1, 567, 2, 507, 507, 253, 253, 0.276855, 0.000977, 0.524414, 0.248535, 21, 0 },
+    { 1, 1078, 484, 865, 476, 432, 238, 0.526367, 0.236328, 0.948730, 0.468750, 21, 0 },
+    { 0, 2, 1731, 321, 227, 160, 133, 0.000977, 0.845215, 0.157715, 0.956055, 21, 6 },
+    { 0, 1938, 1618, 39, 53, 12, 14, 0.946289, 0.790039, 0.965332, 0.815918, 27, 0 },
+    { 0, 2, 1039, 1797, 688, 936, 344, 0.000977, 0.507324, 0.878418, 0.843262, 27, 0 },
+    { 0, 1809, 1675, 168, 20, 11, 9, 0.883301, 0.817871, 0.965332, 0.827637, 27, 0 },
+    { 0, 327, 1731, 322, 213, 173, 105, 0.159668, 0.845215, 0.316895, 0.949219, 27, 6 },
+    { 0, 1942, 1261, 98, 126, 11, 12, 0.948242, 0.615723, 0.996094, 0.677246, 33, 0 },
+    { 0, 2, 2, 869, 1033, 434, 548, 0.000977, 0.000977, 0.425293, 0.505371, 33, 0 },
+};

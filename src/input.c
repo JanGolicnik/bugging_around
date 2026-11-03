@@ -90,6 +90,11 @@ bool is_finger_down(FingerId id)
     return genarr_is(input.fingers, id);
 }
 
+bool is_finger_up(FingerId id)
+{
+    return !is_finger_down(id);
+}
+
 vec2s finger_pos(FingerId id)
 {
     Finger* f = genarr_get(input.fingers, id);

@@ -1,8 +1,8 @@
-<svg width="115" height="64" viewBox="0 0 115 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="64" height="115" viewBox="0 0 64 115" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="centipede_leg">
-<path id="Vector 8" d="M10.5025 33.3193L56.1805 12.3297L103.715 52.5598" stroke-width="21" stroke-linecap="round" stroke="#DB803F"/>
+<path id="Vector 8" d="M33.3192 103.713L12.3296 58.035L52.5597 10.5002" stroke-width="21" stroke-linecap="round" stroke="#DB803F"/>
 <g id="origin">
-<circle id="_origin" cx="10.7152" cy="33.1371" r="4" fill="#D9D9D9"/>
+<circle id="_origin" cx="32.5596" cy="103.5" r="4" transform="rotate(90 32.5596 103.5)" fill="#D9D9D9"/>
 </g>
 </g>
 </svg>

@@ -1,27 +1,27 @@
-<svg width="148" height="309" viewBox="0 0 148 309" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="148" height="335" viewBox="0 0 148 335" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="centipede_body_big">
-<g id="Group 17">
-<g id="thing">
-<path id="_leg_right$" d="M74.5001 227L70.17 209L78.8302 209L74.5001 227Z" fill="#D9D9D9"/>
-</g>
-</g>
-<g id="Group 16">
-<g id="thing_2">
-<path id="_leg_left$" d="M74.5001 81L78.8302 99H70.17L74.5001 81Z" fill="#D9D9D9"/>
-</g>
-</g>
 <g id="Rectangle 1" filter="url(#filter0_d_78_1803)">
-<path d="M124.773 98.0338C135.789 106.134 137.013 204.878 124.773 211.435C112.534 217.992 37.2604 219.535 25.6327 211.435C14.0051 203.335 7.88531 106.52 25.6327 98.0338C43.3802 89.548 113.758 89.9336 124.773 98.0338Z" fill="#762E07" stroke-width="21" stroke="#4B0000"/>
+<path d="M124.773 106.49C135.789 115.288 137.013 222.549 124.773 229.672C112.534 236.795 37.2603 238.471 25.6327 229.672C14.0051 220.873 7.88528 115.707 25.6327 106.49C43.3801 97.2718 113.758 97.6907 124.773 106.49Z" fill="#762E07" stroke-width="21" stroke="#4B0000"/>
+</g>
+<g id="Group 33">
+<g id="thing">
+<path id="_leg_left$" d="M73.5 85L77.8301 103H69.1699L73.5 85Z" fill="#D9D9D9"/>
+</g>
+</g>
+<g id="Group 34">
+<g id="thing_2">
+<path id="_leg_right$" d="M73.5 250L77.8301 232H69.1699L73.5 250Z" fill="#D9D9D9"/>
+</g>
 </g>
 <g id="origin">
-<circle id="_origin" cx="133.5" cy="154" r="4" transform="rotate(90 133.5 154)" fill="#D9D9D9"/>
+<circle id="_origin" cx="133.5" cy="167" r="4" transform="rotate(90 133.5 167)" fill="#D9D9D9"/>
 </g>
 <g id="asd">
-<circle id="_follow" cx="14.5" cy="154" r="4" transform="rotate(90 14.5 154)" fill="#D9D9D9"/>
+<circle id="_follow" cx="15.5" cy="167" r="4" transform="rotate(90 15.5 167)" fill="#D9D9D9"/>
 </g>
 </g>
 <defs>
-<filter id="filter0_d_78_1803" x="0" y="81.3132" width="148" height="154.134" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<filter id="filter0_d_78_1803" x="0" y="89.2324" width="148" height="164.927" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
 <feOffset dy="4"/>
