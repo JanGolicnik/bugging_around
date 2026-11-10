@@ -1,4 +1,5 @@
 #include "marrow/genarr.h"
+#include "ripple/ripple.h"
 #define BUGGIN_INPUT
 #include "base.c"
 
@@ -15,6 +16,7 @@ typedef GenarrHandle FingerId;
 struct {
     GENARR(Finger) fingers;
     vec2s dpad_dir;
+    RippleContext ripple;
 } input;
 
 void input_on_finger(u32 id, f32 x, f32 y, bool down, bool motion)

@@ -19,7 +19,7 @@ void time_update(void)
     time.dt_n_samples += 1;
     if (time.dt_accum > 1.0f) {
         time.avg_fps = (f32)time.dt_n_samples / time.dt_accum;
-        time.dt_accum -= 0.3f;
+        time.dt_accum -= 1.0f;
         time.dt_n_samples = 0;
         mrw_debug_val(time.avg_fps);
     }

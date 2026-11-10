@@ -26,6 +26,7 @@ STRUCT(Transform)
 };
 
 typedef enum {
+    Layer_Default = 0,
     Layer_Background1,
     Layer_Background2,
     Layer_BugsLegs,
@@ -34,6 +35,7 @@ typedef enum {
     Layer_Barrels,
     Layer_Turrets,
     Layer_Ui,
+    Layer_Debug,
     Layer_Count
 } Layer;
 

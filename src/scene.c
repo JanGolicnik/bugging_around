@@ -100,6 +100,9 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
         Entity* parent = scene_get_entity(scene, entity->parent);
         entity->next_sibling = parent->first_child;
         parent->first_child = handle;
+
+        if (entity->sprite.layer == Layer_Default)
+            entity->sprite.layer = parent->sprite.layer;
     }
 
     if (entity_has(entity, CT_Transform))
@@ -115,6 +118,7 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
             entity_apply_world(entity);
         }
     }
+
 
     return handle;
 }

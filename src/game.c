@@ -1,4 +1,7 @@
+#include "atlas.h"
+#include "cglm/struct/vec2.h"
 #include "marrow/marrow.h"
+#include "ripple/ripple_widgets.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -34,7 +37,8 @@ struct {
     } dpad;
 } game;
 
-Scene* game_new_scene(void) {
+Scene* game_new_scene(void)
+{
     if (game.n_scenes >= MAX_SCENES) mrw_abort("max number of scenes reached");
     Scene *scene = &game.scenes[game.n_scenes++];
     *scene = scene_new(game.mem.stable);
@@ -89,8 +93,10 @@ void game_update_turrets(void)
 
 void game_update_bugs(void)
 {
+    const f32 Radius = 200.0f;
     static FingerId f = { 0 };
     static EntityHandle held = { 0 };
+    static EntityHandle last_held = { 0 };
     EntityIter iter = { .include = CT_Bug };
     while (scene_next_entity(game.scene, &iter))
     {
@@ -101,6 +107,7 @@ void game_update_bugs(void)
         {
             finger_consume(f);
             held = iter.handle;
+            last_held = held;
         }
 
         if (is_finger_up(f))
@@ -113,14 +120,19 @@ void game_update_bugs(void)
             e->bug.target = finger_pos(f);
         }
 
-        if (vec2_distance(e->bug.target, e->world.pos) < 200.0f)
+        if (last_held.i == iter.handle.i && vec2_norm2(input.dpad_dir) > 0.001f)
+        {
+            e->bug.target = vec2_add(e->world.pos, vec2_scale(input.dpad_dir, Radius * 2.0f));
+        }
+
+        if (vec2_distance(e->bug.target, e->world.pos) < Radius)
         {
             sprite->local.rot += -sprite->local.rot * (1.0f - exp(-10.0f * time.dt));
             entity_apply_local(sprite);
 
             if (e->bug.next_target_at < time.time)
             {
-                e->bug.target = (vec2s){{ mrw_random_f32(-0.4f, 0.4f) * draw.width, mrw_random_f32(-0.3f, 0.3f) * draw.height }};
+                e->bug.target = (vec2s){{ mrw_random_f32(-0.4f, 0.4f) * draw_width(), mrw_random_f32(-0.3f, 0.3f) * draw_height() }};
                 e->bug.next_target_at = time.time + mrw_random_f32(1.0f, 5.0f);
             }
         }
@@ -278,6 +290,24 @@ bool game_init(void)
         }
     }
 
+    EntityHandle leaves = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("leaves"),
+        .parent = game.anchors[Anchor_mt],
+        .sprite.id = SPRITE_LEAVES,
+        .sprite.layer = Layer_Debug
+    );
+    for (u32 i = 0; i < sprites[SPRITE_LEAVES].n_tags; i++)
+    {
+        SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_LEAVES].tags_i + i];
+        if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
+        scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("leaf"),
+            .parent = leaves,
+            .sprite.id = SPRITE_LEAF,
+            .local.pos = t->pos,
+            .local.rot = t->rot,
+            .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? 1.0f : -1.0f, 1.0f }}
+        );
+    }
+
     game.stump = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("stump"),
         .parent = game.anchors[Anchor_mm],
         .sprite.id = SPRITE_STUMP,
@@ -298,12 +328,13 @@ bool game_init(void)
 
     game.dpad.root = scene_create_entity(game.scene, CT_Transform, .name = str("dpad"),
         .parent = game.anchors[Anchor_lb],
-        .local.pos = vec2_adds(vec2_scale(sprite_size(SPRITE_DPAG_BG), 0.5f), 50.0f),
+        .local.pos = vec2_adds(vec2_scale(sprite_size(SPRITE_DPAD_BG), 0.5f), 50.0f),
+        .sprite.layer = Layer_Ui
     );
 
     game.dpad.bg = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_bg"),
         .parent = game.dpad.root,
-        .sprite.id = SPRITE_DPAG_BG
+        .sprite.id = SPRITE_DPAD_BG
     );
     game.dpad.pad = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_pad"),
         .parent = game.dpad.root,
@@ -365,6 +396,13 @@ void game_update(void)
     game_text("hello everynyan");
     game_text("fps: {}", time.avg_fps);
 
+    slider("scaling", &draw.scaling, 0.1f, 10.0f, game.mem.frame);
+    if (button(str("ifon")))
+    {
+        draw_set_size(1179 / 2, 2556 /2);
+        draw.scaling = draw.scaling == 1.0f ? 2.0f : 1.0f;
+    }
+
     GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
     while (genarr_next_valid(input.fingers, &iter))
         game_text("finger {} x: {} y: {}", iter.f->id, iter.f->x, iter.f->y);
@@ -423,8 +461,16 @@ SDL_AppResult game_on_event(SDL_Event* e)
         case SDL_EVENT_MOUSE_BUTTON_UP:
         case SDL_EVENT_MOUSE_MOTION:
         case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-            i32 w, h; SDL_GetWindowSizeInPixels(draw.window, &w, &h);
-            input_on_finger(1, e->motion.x - w * 0.5f, h * 0.5f - e->motion.y, e->type == SDL_EVENT_MOUSE_BUTTON_DOWN, e->type == SDL_EVENT_MOUSE_MOTION);
+            vec2s size = draw_size();
+
+            bool down = e->type == SDL_EVENT_MOUSE_BUTTON_DOWN;
+            bool motion = e->type == SDL_EVENT_MOUSE_MOTION;
+            ripple_on_mouse_event(&input.ripple, (RippleMouseEvent) {
+                .type = motion ? RippleEventType_MouseMove : (down ? RippleEventType_MousePress : RippleEventType_MouseRelease), .button = 0,
+                .x = e->motion.x, .y = e->motion.y
+            });
+
+            input_on_finger(1, e->motion.x * draw.scaling - size.x * 0.5f, size.y * 0.5f - e->motion.y * draw.scaling, down, motion);
         } break;
 
         case SDL_EVENT_FINGER_DOWN:
@@ -441,10 +487,12 @@ SDL_AppResult game_on_event(SDL_Event* e)
         } break;
 
         case SDL_EVENT_WINDOW_RESIZED: {
+            f32 w = (f32)e->window.data1 * draw.scaling;
+            f32 h = (f32)e->window.data2 * draw.scaling;
             array_for_each_i(game.anchors, i)
             {
                 Entity* anchor = scene_get_entity(game.scene, game.anchors[i]);
-                anchor->world.pos = (vec2s){{ (float)e->window.data1 * _anchors[i].x, (float)e->window.data2 * _anchors[i].y }};
+                anchor->world.pos = (vec2s){{ w * _anchors[i].x, h * _anchors[i].y }};
                 entity_apply_world(anchor);
             }
         } break;

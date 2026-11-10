@@ -24,10 +24,11 @@ struct {
     i32 width, height;
     Reni* reni;
     ReniSurface surface;
-    RippleContext ripple;
 
     VEKTOR(Instance) instances;
     ReniBuffer instance_buffer;
+
+    f32 scaling;
 
     struct {
         ReniBindingLayout layout;
@@ -213,8 +214,8 @@ static void on_reni_init(Reni* reni, void* _)
 
     draw.instance_buffer = reni_create_buffer(draw.reni, (ReniBufferConfig) {  .usage = ReniBufferUsage_CopyDst | ReniBufferUsage_Vertex }),
 
-    draw.ripple = ripple_initialize(draw._mem.frame, draw._mem.stable, (RippleBackendRendererConfig){ .reni = draw.reni });
-    ripple_make_active_context(&draw.ripple);
+    input.ripple = ripple_initialize(draw._mem.frame, draw._mem.stable, (RippleBackendRendererConfig){ .reni = draw.reni });
+    ripple_make_active_context(&input.ripple);
 }
 
 static void on_reni_error(str msg)
@@ -241,8 +242,25 @@ bool draw_init(Allocator* stable, Allocator* frame)
 
     vektor_init(draw.instances, 10, stable);
 
+    draw.scaling = 1.0f;
+
     return true;
 }
+
+void draw_set_fullscreen(void)
+{
+    SDL_SetWindowFullscreen(draw.window, true);
+}
+
+void draw_set_size(u32 w, u32 h)
+{
+    SDL_SetWindowFullscreen(draw.window, false);
+    SDL_SetWindowSize(draw.window, w, h);
+}
+
+f32 draw_width(void) { return draw.width * draw.scaling; }
+f32 draw_height(void) { return draw.height * draw.scaling; }
+vec2s draw_size(void) { return (vec2s){{ draw_width(), draw_height() }}; }
 
 void draw_scene(Scene* scene, f32 time)
 {
@@ -255,8 +273,8 @@ void draw_scene(Scene* scene, f32 time)
     ReniTexture target = reni_surface_acquire(draw.reni, draw.surface, (ReniSurfaceState){ .width = (u32)draw.width, .height = (u32)draw.height });
     if (!target.h.valid) return;
 
-    draw.shader_data.data.width = (f32)draw.width;
-    draw.shader_data.data.height = (f32)draw.height;
+    draw.shader_data.data.width = (f32)draw.width * draw.scaling;
+    draw.shader_data.data.height = (f32)draw.height * draw.scaling;
     draw.shader_data.data.time = time;
     reni_buffer_write(draw.reni, draw.shader_data.buffer, slice_u8_one(&draw.shader_data.data), 0);
 
@@ -267,7 +285,7 @@ void draw_scene(Scene* scene, f32 time)
         .targets[0] = {
             .texture = target,
             .clear = true,
-            .clear_value = { 0.94, 0.5, 0.4, 1.0 }
+            .clear_value = { 233.0f / 255.0f, 173.0f / 255.0f, 120.0f / 255.0f, 1.0 }
         },
     });
 
@@ -316,7 +334,7 @@ void draw_scene(Scene* scene, f32 time)
     }
 
     reni_submit_renderpass(draw.reni, pass);
-    ripple_submit(&draw.ripple, draw.width, draw.height, (RippleRenderData) { .reni = draw.reni, .surface = target });
+    ripple_submit(&input.ripple, draw.width, draw.height, (RippleRenderData) { .reni = draw.reni, .surface = target });
     reni_end(draw.reni);
 }
 
