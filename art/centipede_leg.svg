@@ -2,7 +2,7 @@
 <g id="centipede_leg">
 <path id="Vector 8" d="M33.3192 103.713L12.3296 58.035L52.5597 10.5002" stroke-width="21" stroke-linecap="round" stroke="#DB803F"/>
 <g id="origin">
-<circle id="_origin" cx="32.5596" cy="103.5" r="4" transform="rotate(90 32.5596 103.5)" fill="#D9D9D9"/>
+<circle id="_origin" cx="32.5596" cy="103.5" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 </svg>

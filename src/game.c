@@ -1,5 +1,8 @@
+#include "marrow/marrow.h"
 #define BUGGIN_GAME
 #include "base.c"
+
+#define MAX_SCENES 10
 
 struct {
     bool in_background;
@@ -10,7 +13,8 @@ struct {
         Allocator* stable;
     } mem;
 
-    VEKTOR(Scene*) scenes;
+    Scene scenes[MAX_SCENES];
+    u32 n_scenes;
     Scene* scene;
 
     EntityHandle anchors[9];
@@ -18,6 +22,8 @@ struct {
     EntityHandle stinkbug;
     EntityHandle ladybug;
     EntityHandle centipede;
+
+    EntityHandle stump;
 
     struct
     {
@@ -29,11 +35,9 @@ struct {
 } game;
 
 Scene* game_new_scene(void) {
-    Scene* scene = mrw_alloc(game.mem.stable, Scene);
-    vektor_add(game.scenes, scene);
-    *scene = (Scene) { 0 };
-    genarr_init(scene->entities, 123, game.mem.stable);
-    scene->root = scene_create_entity(scene, 0, .name = str("root"));
+    if (game.n_scenes >= MAX_SCENES) mrw_abort("max number of scenes reached");
+    Scene *scene = &game.scenes[game.n_scenes++];
+    *scene = scene_new(game.mem.stable);
     return scene;
 }
 
@@ -43,7 +47,7 @@ vec2s sprite_get_tag_pos(SpriteId id, SpriteTag tag)
     for (u32 i = 0; s->n_tags; i++)
     {
         const SpriteTagInfo* t = &sprite_tags[s->tags_i + i];
-        if (t->tag == tag) return (vec2s){{ t->x, t->y }};
+        if (t->tag == tag) return t->pos;
     }
     return (vec2s){ 0 };
 }
@@ -166,7 +170,7 @@ bool game_init(void)
             {
                 EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
                     .parent = body,
-                    .local.pos = (vec2s){{ t->x, t->y }},
+                    .local.pos = t->pos,
                     .local.rot = t->rot,
                     .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
                 );
@@ -180,7 +184,7 @@ bool game_init(void)
             {
                 EntityHandle turret = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Turret, .name = str("cannon !!"),
                     .parent = body,
-                    .local.pos = (vec2s){{ t-> x, t->y }},
+                    .local.pos = t->pos,
                     .local.rot = t->rot,
                     .sprite.id = SPRITE_CANNON1,
                     .sprite.layer = Layer_Turrets,
@@ -188,7 +192,7 @@ bool game_init(void)
                 SpriteTagInfo* t = sprite_get_tag(SPRITE_CANNON1, SpriteTag_turret);
                 scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("barrel"),
                     .parent = turret,
-                    .local.pos = (vec2s){{ t-> x, t->y }},
+                    .local.pos = t->pos,
                     .local.rot = t->rot,
                     .sprite.id = SPRITE_CANNON1_BARREL,
                     .sprite.layer = Layer_Barrels,
@@ -210,7 +214,7 @@ bool game_init(void)
             if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
             EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
                 .parent = body,
-                .local.pos = (vec2s){{ t->x, t->y }},
+                .local.pos = t->pos,
                 .local.rot = t->rot,
                 .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
             );
@@ -227,7 +231,7 @@ bool game_init(void)
         scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
             .parent = game.centipede,
             .sprite.id = SPRITE_CENTIPEDE,
-            .sprite.layer = Layer_BugsBodies
+            .sprite.layer = Layer_BugsHead
         );
 
         u32 n_segments = 0;
@@ -253,7 +257,7 @@ bool game_init(void)
                 if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
                 EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
                     .parent = body,
-                    .local.pos = (vec2s){{ t->x, t->y }},
+                    .local.pos = t->pos,
                     .local.rot = t->rot,
                     .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
                 );
@@ -274,15 +278,27 @@ bool game_init(void)
         }
     }
 
-    game.centipede = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("centipede"));
-    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
-        .parent = game.centipede,
-        .sprite.id = SPRITE_CENTIPEDE,
+    game.stump = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("stump"),
+        .parent = game.anchors[Anchor_mm],
+        .sprite.id = SPRITE_STUMP,
+        .sprite.layer = Layer_Background2
     );
+    for (u32 i = 0; i < sprites[SPRITE_STUMP].n_tags; i++)
+    {
+        SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STUMP].tags_i + i];
+        if (t->tag != SpriteTag_leg) continue;
+        scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("stump_leg"),
+            .parent = game.stump,
+            .sprite.id = SPRITE_STUMP_LEG,
+            .local.pos = t->pos,
+            .local.rot = t->rot,
+            .sprite.layer = Layer_Background1
+        );
+    }
 
     game.dpad.root = scene_create_entity(game.scene, CT_Transform, .name = str("dpad"),
         .parent = game.anchors[Anchor_lb],
-        .local.pos = vec2_adds(sprite_size(SPRITE_DPAG_BG), 100.0f),
+        .local.pos = vec2_adds(vec2_scale(sprite_size(SPRITE_DPAG_BG), 0.5f), 50.0f),
     );
 
     game.dpad.bg = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_bg"),

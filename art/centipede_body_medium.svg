@@ -5,19 +5,19 @@
 </g>
 <g id="Group 31">
 <g id="thing">
-<path id="_leg_left$" d="M62 86L66.3301 104H57.6699L62 86Z" fill="#D9D9D9"/>
+<path id="_leg_left$" d="M62 86L66.3301 104H57.6699L62 86Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <g id="Group 32">
 <g id="thing_2">
-<path id="_leg_right$" d="M62 223L66.3301 205H57.6699L62 223Z" fill="#D9D9D9"/>
+<path id="_leg_right$" d="M62 223L66.3301 205H57.6699L62 223Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <g id="origin">
-<circle id="_origin" cx="99" cy="155" r="4" transform="rotate(90 99 155)" fill="#D9D9D9"/>
+<circle id="_origin" cx="99" cy="155" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 <g id="asd">
-<circle id="_follow" cx="20" cy="154" r="4" transform="rotate(90 20 154)" fill="#D9D9D9"/>
+<circle id="_follow" cx="20" cy="154" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <defs>

@@ -1,5 +1,3 @@
-#include "marrow/marrow.h"
-#include "reni/reni.h"
 #define BUGGIN_DRAW
 #include "base.c"
 
@@ -269,7 +267,7 @@ void draw_scene(Scene* scene, f32 time)
         .targets[0] = {
             .texture = target,
             .clear = true,
-            .clear_value = { 0.1, 0.3, 0.6, 1.0 }
+            .clear_value = { 0.94, 0.5, 0.4, 1.0 }
         },
     });
 

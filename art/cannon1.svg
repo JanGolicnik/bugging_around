@@ -3,11 +3,11 @@
 <g id="Group 24" filter="url(#filter0_d_80_400)">
 <g id="Group 29">
 <g id="thing">
-<path id="_turret$" d="M62 50L44 54.3301V45.6699L62 50Z" fill="#D9D9D9"/>
+<path id="_turret$" d="M62 50L44 54.3301V45.6699L62 50Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <g id="origin">
-<circle id="_origin" cx="50" cy="50" r="4" transform="rotate(90 50 50)" fill="#D9D9D9"/>
+<circle id="_origin" cx="50" cy="50" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 <g id="Ellipse 19">
 <path d="M50 96C25.5 96 3.99999 78 3.99999 50C3.99999 22 24 4 50 4C76 4 96 20 96 50C96 80 74.5 96 50 96Z" fill="#D9D9D9"/>

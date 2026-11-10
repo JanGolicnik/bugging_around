@@ -247,7 +247,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     FILE* f = fopen(path, "wb");
     if (!f) mrw_abort("cannot open {}", path);
 
-    printfb(f, "#pragma once\n\n#include <marrow/marrow.h>\n\n");
+    printfb(f, "#pragma once\n\n#include \"base.c\"\n\n");
     printfb(f, "#define ATLAS_PAGE_COUNT {}\n", pages);
     printfb(f, "#define ATLAS_SIZE {}\n", PAGE_SIZE);
 
@@ -260,7 +260,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     printfb(f, "    SPRITE_COUNT\n} SpriteId;\n\n");
 
     printfb(f,
-        "typedef struct %{ SpriteTag tag; f32 x, y, rot; } SpriteTagInfo;\n"
+        "typedef struct %{ SpriteTag tag; vec2s pos; f32 rot; } SpriteTagInfo;\n"
         "typedef struct %{\n"
         "    i32 page;\n"
         "    i32 x, y, w, h;\n"
@@ -269,13 +269,13 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
         "    u32 tags_i, n_tags;\n"
         "} SpriteInfo;\n\n");
 
-    printfb(f, "static const SpriteTagInfo sprite_tags[] = %{\n");
+    printfb(f, "static SpriteTagInfo sprite_tags[] = %{\n");
     slice_for_each(sprites, s, Sprite)
         for (i32 i = s->n_tags - 1; i >= 0; i--)
-            printfb(f, "    %{ SpriteTag{}, {}, {}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y, s->tags[i].rot);
+            printfb(f, "    %{ SpriteTag{}, %{%{{}, {}}}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y, s->tags[i].rot);
     printfb(f, "};\n\n");
 
-    printfb(f, "static const SpriteInfo sprites[SPRITE_COUNT] = %{\n");
+    printfb(f, "static SpriteInfo sprites[SPRITE_COUNT] = %{\n");
     u32 tag_i = 0;
     slice_for_each(sprites, s, Sprite) {
         printfb(f, "    %{ {}, {}, {}, ", s->page, s->x, s->y);

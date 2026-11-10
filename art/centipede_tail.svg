@@ -6,16 +6,16 @@
 <path d="M234.349 116.225C247.772 121.728 249.263 188.802 234.349 193.256C219.436 197.71 127.716 198.758 113.548 193.256C99.3798 187.754 91.923 121.99 113.548 116.225C135.173 110.461 220.927 110.723 234.349 116.225Z" fill="#762E07" stroke-width="21" stroke="#4B0000"/>
 </g>
 <g id="origin">
-<circle id="_origin" cx="244.983" cy="155" r="4" transform="rotate(90 244.983 155)" fill="#D9D9D9"/>
+<circle id="_origin" cx="244.983" cy="155" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 <g id="Group 37">
 <g id="thing">
-<path id="_leg_left$" d="M216.983 98L221.313 116H212.653L216.983 98Z" fill="#D9D9D9"/>
+<path id="_leg_left$" d="M216.983 98L221.313 116H212.653L216.983 98Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <g id="Group 38">
 <g id="thing_2">
-<path id="_leg_right$" d="M216.983 211L221.313 193H212.653L216.983 211Z" fill="#D9D9D9"/>
+<path id="_leg_right$" d="M216.983 211L221.313 193H212.653L216.983 211Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 </g>

@@ -1,17 +1,14 @@
-<svg width="143" height="34" viewBox="0 0 143 34" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="34" height="143" viewBox="0 0 34 143" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="cannon2_barrel">
 <g id="Rectangle 11">
-<use xlink:href="#stroke0_91_837" fill="#D9D9D9"/>
-<mask id="stroke1_91_837" fill="white">
-<use xlink:href="#stroke0_91_837"/>
+<rect y="-5.5582e-08" width="34" height="143" rx="7" fill="#D9D9D9"/>
+<mask id="stroke0_91_837" fill="white">
+<path d="M1.14433e-08 7C5.12336e-09 3.134 3.13401 -5.12336e-09 7 -1.14433e-08L27 -4.41386e-08C30.866 -5.04586e-08 34 3.13401 34 7L34 136C34 139.866 30.866 143 27 143L7 143C3.13401 143 2.28648e-07 139.866 2.22328e-07 136L1.14433e-08 7Z"/>
 </mask>
-<path d="M1.14433e-08 7L4.41386e-08 27C5.04586e-08 30.866 3.134 34 7 34L136 34C139.866 34 143 30.866 143 27L143 7C143 3.13401 139.866 5.12336e-09 136 1.14433e-08L7 2.22328e-07C3.13401 2.28648e-07 5.12335e-09 3.13401 1.14433e-08 7Z" stroke-width="24" stroke="#A4A4A4" mask="url(#stroke1_91_837)"/>
+<rect y="-5.5582e-08" width="34" height="143" rx="7" stroke-width="24" stroke="#A4A4A4" mask="url(#stroke0_91_837)"/>
 </g>
 <g id="origin">
-<circle id="_origin" cx="17" cy="17" r="4" transform="rotate(90 17 17)" fill="#D9D9D9"/>
+<circle id="_origin" cx="17" cy="126" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
-<defs>
-<path id="stroke0_91_837" d="M136 1.14433e-08C139.866 5.12336e-09 143 3.13401 143 7L143 27C143 30.866 139.866 34 136 34L7 34C3.134 34 5.04586e-08 30.866 4.41386e-08 27L1.14433e-08 7C5.12335e-09 3.13401 3.134 2.28648e-07 7 2.22328e-07L136 1.14433e-08Z"/>
-</defs>
 </svg>

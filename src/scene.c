@@ -150,3 +150,11 @@ void scene_print_tree(Entity* e, u32 indent)
        scene_print_tree(child, indent + 1);
    }
 }
+
+Scene scene_new(Allocator* stable)
+{
+    Scene scene = { 0 };
+    genarr_init(scene.entities, 123, stable);
+    scene.root = scene_create_entity(&scene, 0, .name = str("root"));
+    return scene;
+}

@@ -1,4 +1,3 @@
-#include "atlas.h"
 #define BUGGIN_ENTITY
 #include "base.c"
 
@@ -27,9 +26,11 @@ STRUCT(Transform)
 };
 
 typedef enum {
-    Layer_Background,
+    Layer_Background1,
+    Layer_Background2,
     Layer_BugsLegs,
     Layer_BugsBodies,
+    Layer_BugsHead,
     Layer_Barrels,
     Layer_Turrets,
     Layer_Ui,

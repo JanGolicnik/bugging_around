@@ -2,22 +2,22 @@
 <g id="centipede_body_small">
 <g id="Group 35">
 <g id="thing">
-<path id="_leg_left$" d="M40.1318 85.3962L44.462 103.396H35.8017L40.1318 85.3962Z" fill="#D9D9D9"/>
+<path id="_leg_left$" d="M40.1318 85.3962L44.462 103.396H35.8017L40.1318 85.3962Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <g id="Group 36">
 <g id="thing_2">
-<path id="_leg_right$" d="M40.1318 233.396L44.462 215.396H35.8017L40.1318 233.396Z" fill="#D9D9D9"/>
+<path id="_leg_right$" d="M40.1318 233.396L44.462 215.396H35.8017L40.1318 233.396Z" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <g id="Rectangle 1" filter="url(#filter0_d_78_1908)">
 <path d="M60.4921 104.859C65.0865 112.668 65.597 207.861 60.4921 214.182C55.3872 220.504 23.9926 221.991 19.143 214.182C14.2934 206.373 11.741 113.04 19.143 104.859C26.545 96.6786 55.8977 97.0503 60.4921 104.859Z" fill="#762E07" stroke-width="21" stroke="#4B0000"/>
 </g>
 <g id="origin">
-<circle id="_origin" cx="64.1318" cy="159.396" r="4" transform="rotate(90 64.1318 159.396)" fill="#D9D9D9"/>
+<circle id="_origin" cx="64.1318" cy="159.396" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 <g id="asd">
-<circle id="_follow" cx="15.1318" cy="159.396" r="4" transform="rotate(90 15.1318 159.396)" fill="#D9D9D9"/>
+<circle id="_follow" cx="15.1318" cy="159.396" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
 </g>
 </g>
 <defs>
