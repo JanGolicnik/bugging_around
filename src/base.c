@@ -5,6 +5,10 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#include <stb_image.h>
+
 #include <marrow/marrow.h>
 
 #define RENI_BACKEND_SDL3
@@ -53,6 +57,9 @@ static f32 vec2_angle_to(vec2s from, vec2s to)
 #ifndef BUGGIN_INPUT
 #include "input.c"
 
+#ifndef BUGGIN_AUDIO
+#include "audio.c"
+
 #ifndef BUGGIN_ENTITY
 #include "entity.c"
 
@@ -65,6 +72,7 @@ static f32 vec2_angle_to(vec2s from, vec2s to)
 #ifndef BUGGIN_GAME
 #include "game.c"
 
+#endif
 #endif
 #endif
 #endif

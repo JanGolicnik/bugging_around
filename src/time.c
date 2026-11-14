@@ -9,19 +9,19 @@ struct {
     u32 dt_n_samples;
 
     f32 avg_fps;
-} time;
+} timer;
 
 void time_update(void)
 {
     f32 now = (f32)SDL_GetTicksNS() / 1000000000.0f;
-    time.dt = now - time.time;
-    time.dt_accum += time.dt;
-    time.dt_n_samples += 1;
-    if (time.dt_accum > 1.0f) {
-        time.avg_fps = (f32)time.dt_n_samples / time.dt_accum;
-        time.dt_accum -= 1.0f;
-        time.dt_n_samples = 0;
-        mrw_debug_val(time.avg_fps);
+    timer.dt = now - timer.time;
+    timer.dt_accum += timer.dt;
+    timer.dt_n_samples += 1;
+    if (timer.dt_accum > 1.0f) {
+        timer.avg_fps = (f32)timer.dt_n_samples / timer.dt_accum;
+        timer.dt_accum -= 1.0f;
+        timer.dt_n_samples = 0;
+        mrw_debug_val(timer.avg_fps);
     }
-    time.time = now;
+    timer.time = now;
 }

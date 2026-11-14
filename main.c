@@ -12,6 +12,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
     bool success = true;
     if (success) success |= game_init();
+    if (success) success |= audio_init(game.mem.stable);
+    if (success) success |= draw_init(game.mem.stable, game.mem.frame);
     return success ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
 }
 
@@ -23,6 +25,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* e)
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
     game_tick();
+    audio_tick();
     return SDL_APP_CONTINUE;
 }
 

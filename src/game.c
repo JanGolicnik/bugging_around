@@ -1,7 +1,3 @@
-#include "atlas.h"
-#include "cglm/struct/vec2.h"
-#include "marrow/marrow.h"
-#include "ripple/ripple_widgets.h"
 #define BUGGIN_GAME
 #include "base.c"
 
@@ -127,31 +123,33 @@ void game_update_bugs(void)
 
         if (vec2_distance(e->bug.target, e->world.pos) < Radius)
         {
-            sprite->local.rot += -sprite->local.rot * (1.0f - exp(-10.0f * time.dt));
+            sprite->local.rot += -sprite->local.rot * (1.0f - exp(-10.0f * timer.dt));
             entity_apply_local(sprite);
 
-            if (e->bug.next_target_at < time.time)
+            if (e->bug.next_target_at < timer.time)
             {
                 e->bug.target = (vec2s){{ mrw_random_f32(-0.4f, 0.4f) * draw_width(), mrw_random_f32(-0.3f, 0.3f) * draw_height() }};
-                e->bug.next_target_at = time.time + mrw_random_f32(1.0f, 5.0f);
+                e->bug.next_target_at = timer.time + mrw_random_f32(1.0f, 5.0f);
             }
         }
         else
         {
             vec2s dir = vec2_normalize(vec2_sub(e->bug.target, e->world.pos));
             e->world.rot = atan2(dir.y, dir.x);
-            e->world.pos = vec2_add(e->world.pos, vec2_scale(dir, 200.0f * time.dt));
+            e->world.pos = vec2_add(e->world.pos, vec2_scale(dir, 200.0f * timer.dt));
             entity_apply_world(e);
 
-            sprite->local.rot = sin(time.time * 10.0f) * 0.1;
+            sprite->local.rot = sin(timer.time * 10.0f) * 0.1;
             entity_apply_local(sprite);
 
             EntityIter iter = { .include = CT_Leg };
             while (scene_next_entity(game.scene, &iter))
             {
-                iter.entity->local.rot = sin(time.time * 30.0f) * 0.1f;
+                iter.entity->local.rot = sin(timer.time * 30.0f) * 0.1f;
                 entity_apply_local(iter.entity);
             }
+
+            audio_play_ex(Sound_Click, 1.0f, mrw_random_f32(0.5f, 1.5f));
         }
     }
 }
@@ -341,7 +339,7 @@ bool game_init(void)
         .sprite.id = SPRITE_DPAD_PAD
     );
 
-    return draw_init(game.mem.stable, game.mem.frame);
+    return true;
 }
 
 #define game_text(...) text(mrw_format(game.mem.frame, __VA_ARGS__))
@@ -391,10 +389,20 @@ void game_update_links(void)
     }
 }
 
+SoundHandle music = { 0 };
+f32 music_volume = 0.0f;
 void game_update(void)
 {
     game_text("hello everynyan");
-    game_text("fps: {}", time.avg_fps);
+    game_text("fps: {}", timer.avg_fps);
+
+    if (slider("music volume", &music_volume, 0.0f, 1.0f, game.mem.frame))
+    {
+        if (!music.valid) {
+            music = audio_play(Sound_Music);
+        }
+        audio_set_volume(music, music_volume);
+    }
 
     slider("scaling", &draw.scaling, 0.1f, 10.0f, game.mem.frame);
     if (button(str("ifon")))
@@ -420,7 +428,7 @@ void game_update(void)
 
 void game_tick(void)
 {
-    if (game.in_background || !draw_is_ready()) return;
+    if (game.in_background || !draw_is_ready()  || !audio_is_ready()) return;
 
     mrw_bump_reset(&game.mem._frame);
 
@@ -433,9 +441,9 @@ void game_tick(void)
 
     // game_print_tree(scene_get_entity(game.scene, game.scene->root), 0);
 
-    draw_scene(game.scene, time.time);
+    draw_scene(game.scene, timer.time);
 
-    time.tick++;
+    timer.tick++;
 }
 
 void game_destroy(void)

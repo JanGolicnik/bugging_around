@@ -56,7 +56,7 @@ FetchContent_MakeAvailable(${THIRD_PARTY_DEPS})
 add_subdirectory(webgpu)
 add_subdirectory(tools/atlas)
 
-set(SOURCES main.c)
+set(SOURCES main.c miniaudio.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 

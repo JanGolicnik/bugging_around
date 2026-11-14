@@ -40,7 +40,7 @@ void input_on_finger(u32 id, f32 x, f32 y, bool down, bool motion)
             FingerId h = genarr_add(input.fingers, (Finger){ .id = id });
             f = genarr_get(input.fingers, h);
         }
-        f->down_at = time.tick;
+        f->down_at = timer.tick;
         f->x = x; f->y = y;
         return;
     }
@@ -78,7 +78,7 @@ bool is_finger_down_at(f32 x, f32 y, f32 radius, FingerId* out)
     while (genarr_next_valid(input.fingers, &iter))
     {
         Finger* f = iter.f;
-        if (f->down_at == time.tick && vec2_norm((vec2s){{ f->x - x, f->y - y }}) < radius)
+        if (f->down_at == timer.tick && vec2_norm((vec2s){{ f->x - x, f->y - y }}) < radius)
         {
             *out = iter.handle;
             break;
