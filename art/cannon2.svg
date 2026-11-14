@@ -3,12 +3,12 @@
 <g id="Group 25" filter="url(#filter1_d_80_493)">
 <g id="Group 28">
 <g id="thing">
-<path id="_turret$" d="M62 118L66.3301 136H57.6699L62 118Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_turret$" d="M62 118L66.3301 136H57.6699L62 118Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Group 27">
 <g id="thing_2">
-<path id="_turret$_2" d="M40 118L44.3301 136H35.6699L40 118Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_turret$_2" d="M40 118L44.3301 136H35.6699L40 118Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Ellipse 19">
@@ -20,11 +20,11 @@
 </g>
 </g>
 <g id="origin">
-<circle id="_origin" cx="51" cy="130" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
+<circle id="_origin" cx="51" cy="130" r="4" fill="#D9D9D9"/>
 </g>
 </g>
 <defs>
-<filter id="filter0_d_80_493" x="0" y="0" width="101.993" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<filter id="filter0_d_80_493" x="0" y="0" width="102" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
 <feOffset/>

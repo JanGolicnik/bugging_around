@@ -41,17 +41,6 @@ Scene* game_new_scene(void)
     return scene;
 }
 
-vec2s sprite_get_tag_pos(SpriteId id, SpriteTag tag)
-{
-    const SpriteInfo* s = &sprites[id];
-    for (u32 i = 0; s->n_tags; i++)
-    {
-        const SpriteTagInfo* t = &sprite_tags[s->tags_i + i];
-        if (t->tag == tag) return t->pos;
-    }
-    return (vec2s){ 0 };
-}
-
 #define XAnchors \
 X(Anchor_lt, -0.5f, 0.5f),  X(Anchor_mt , 0.0f, 0.5f),  X(Anchor_rt , 0.5f, 0.5f),\
 X(Anchor_lm, -0.5f, 0.0f),  X(Anchor_mm , 0.0f, 0.0f),  X(Anchor_rm , 0.5f, 0.0f),\
@@ -167,7 +156,9 @@ bool game_init(void)
     }
 
     { // stinkbug
-        game.stinkbug = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("stinkbug"));
+        game.stinkbug = scene_create_entity(game.scene, CT_Transform | CT_Bug | CT_Collision, .name = str("stinkbug"),
+            .collision = collision_from_sprite(SPRITE_STINKBUG, 0),
+        );
         EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
             .parent = game.stinkbug,
             .sprite.id = SPRITE_STINKBUG,
@@ -212,7 +203,9 @@ bool game_init(void)
     }
 
     { // ladybug
-        game.ladybug = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("ladybug"));
+        game.ladybug = scene_create_entity(game.scene, CT_Transform | CT_Bug | CT_Collision, .name = str("ladybug"),
+            .collision = collision_from_sprite(SPRITE_LADYBUG, 0),
+        );
         EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
             .parent = game.ladybug,
             .sprite.id = SPRITE_LADYBUG,
@@ -246,7 +239,7 @@ bool game_init(void)
 
         u32 n_segments = 0;
         EntityHandle segments[10] = { 0 };
-        for (i32 i = sprites[SPRITE_CENTIPEDE].n_tags; i >= 0; i--)
+        for (i32 i = sprites[SPRITE_CENTIPEDE].n_tags - 1; i >= 0; i--)
         {
             const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_CENTIPEDE].tags_i + i];
             SpriteId sprite = SPRITE_COUNT;
@@ -256,7 +249,8 @@ bool game_init(void)
             else if (t->tag == SpriteTag_spine_tail) sprite = SPRITE_CENTIPEDE_TAIL;
             else continue;
 
-            EntityHandle body = segments[n_segments++] = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Link, .name = str("body"),
+            EntityHandle body = segments[n_segments++] =
+                scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Link | CT_Collision, .name = str("body"),
                 .sprite.id = sprite,
                 .sprite.layer = Layer_BugsBodies,
             );
@@ -284,7 +278,8 @@ bool game_init(void)
             Entity* e = scene_get_entity(game.scene, segments[i]);
             e->link.follow = i == (n_segments - 1) ? game.centipede : segments[i + 1];
             Entity* follow = scene_get_entity(game.scene, e->link.follow);
-            e->link.dist =  vec2_norm(sprite_get_tag_pos(follow->sprite.id, SpriteTag_follow)) * 0.9f;
+            e->link.dist = vec2_norm(sprite_get_tag(follow->sprite.id, SpriteTag_follow)->pos) * 0.85f;
+            e->collision = collision_from_sprite(e->sprite.id, CollisionGroup_Centipede);
         }
     }
 
@@ -343,6 +338,39 @@ bool game_init(void)
 }
 
 #define game_text(...) text(mrw_format(game.mem.frame, __VA_ARGS__))
+
+void game_update_collisions(void)
+{
+    EntityIter iter = { .include = CT_Collision | CT_Transform };
+    while (scene_next_entity(game.scene, &iter))
+    {
+        Entity* a = iter.entity;
+        vec2s a_pos = entity_local_to_world(a, a->collision.pos);
+        EntityIter iter2 = iter;
+        while (scene_next_entity(game.scene, &iter2))
+        {
+            Entity* b = iter2.entity;
+            if (a->collision.fixed && b->collision.fixed) continue;
+            if (a->collision.group != 0 && b->collision.group != 0 && (a->collision.group & b->collision.group)) continue;
+
+            vec2s b_pos = entity_local_to_world(b, b->collision.pos);
+
+            f32 radius = a->collision.radius + b->collision.radius;
+            vec2s aTob = vec2_sub(b_pos, a_pos);
+            f32 dist2 = vec2_norm2(aTob);
+            if (dist2 >= radius * radius) continue;
+
+            f32 dist = sqrtf(dist2);
+            vec2s dir = (dist > 1e-6f) ? vec2_scale(aTob, 1.0f / dist) : (vec2s){ .x = 1.0f, .y = 0.0f };
+            f32 delta = radius - dist;
+            f32 t = a->collision.fixed ? 0.0f : (b->collision.fixed ? 1.0f : 0.5f);
+            a->world.pos = vec2_sub(a->world.pos, vec2_scale(dir, delta * t));
+            b->world.pos = vec2_add(b->world.pos, vec2_scale(dir, delta * (1.0f - t)));
+            entity_apply_world(a);
+            entity_apply_world(b);
+        }
+    }
+}
 
 void game_update_ui(void)
 {
@@ -422,6 +450,8 @@ void game_update(void)
     game_update_turrets();
 
     game_update_links();
+
+    game_update_collisions();
 
 //     scene_print_tree(scene_root(game.scene), 0);
 }

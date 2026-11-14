@@ -1,8 +1,8 @@
-<svg width="169" height="20" viewBox="0 0 169 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="170" height="20" viewBox="0 0 170 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="line">
-<path id="line_2" d="M159 10H11.5" stroke-width="20" stroke-linecap="round" stroke="#D39393"/>
+<path id="line_2" d="M159.5 10H12" stroke-width="20" stroke-linecap="round" stroke="#D39393"/>
 <g id="thing">
-<path id="_origin" d="M24 10L6 14.3301V5.66987L24 10Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_origin" d="M24.5 10L6.5 14.3301V5.66987L24.5 10Z" fill="#D9D9D9"/>
 </g>
 </g>
 </svg>

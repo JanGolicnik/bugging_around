@@ -2,32 +2,32 @@
 <g id="ladybug">
 <g id="Group 10">
 <g id="thing">
-<path id="_leg_right$" d="M75.999 213.779L57.999 218.109V209.449L75.999 213.779Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_leg_right$" d="M75.999 213.779L57.999 218.109V209.449L75.999 213.779Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Group 11">
 <g id="thing_2">
-<path id="_leg_right$_2" d="M164.05 217.834L157.392 235.109L150.264 230.191L164.05 217.834Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_leg_right$_2" d="M164.05 217.834L157.392 235.109L150.264 230.191L164.05 217.834Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Group 12">
 <g id="thing_3">
-<path id="_leg_left$" d="M224.22 208.778L240.579 217.445L242.731 209.056L224.22 208.778Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_leg_left$" d="M224.22 208.778L240.579 217.445L242.731 209.056L224.22 208.778Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Group 13">
 <g id="thing_4">
-<path id="_leg_left$_2" d="M75.999 51.4275L57.999 47.0974V55.7576L75.999 51.4275Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_leg_left$_2" d="M75.999 51.4275L57.999 47.0974V55.7576L75.999 51.4275Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Group 14">
 <g id="thing_5">
-<path id="_leg_left$_3" d="M164.05 47.3725L157.392 30.0979L150.264 35.0163L164.05 47.3725Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_leg_left$_3" d="M164.05 47.3725L157.392 30.0979L150.264 35.0163L164.05 47.3725Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Group 15">
 <g id="thing_6">
-<path id="_leg_right$_3" d="M224.22 56.4285L240.579 47.7617L242.731 56.1504L224.22 56.4285Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_leg_right$_3" d="M224.22 56.4285L240.579 47.7617L242.731 56.1504L224.22 56.4285Z" fill="#D9D9D9"/>
 </g>
 </g>
 <g id="Vector" filter="url(#filter0_d_47_8168)">
@@ -114,7 +114,15 @@
 </g>
 </g>
 <g id="thing_7">
-<path id="_turret$" d="M153.503 132.779L135.503 137.109L135.503 128.449L153.503 132.779Z" fill="#D9D9D9" fill-opacity="0.01"/>
+<path id="_turret$" d="M153.503 132.779L135.503 137.109L135.503 128.449L153.503 132.779Z" fill="#D9D9D9"/>
+</g>
+<g id="collision">
+<g id="collision_2">
+<circle id="_collision$" cx="165.503" cy="132.779" r="111" fill="#00FFD5" fill-opacity="0.5"/>
+</g>
+</g>
+<g id="origin">
+<circle id="_origin" cx="146.503" cy="132.779" r="4" fill="#D9D9D9"/>
 </g>
 </g>
 <defs>

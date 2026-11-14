@@ -51,8 +51,8 @@ static f32 vec2_angle_to(vec2s from, vec2s to)
 
 #include "atlas.h"
 
-#ifndef BUGGIN_TIME
-#include "time.c"
+#ifndef BUGGIN_TIMER
+#include "timer.c"
 
 #ifndef BUGGIN_INPUT
 #include "input.c"

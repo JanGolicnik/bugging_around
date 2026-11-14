@@ -1,4 +1,4 @@
-#define BUGGIN_TIME
+#define BUGGIN_TIMER
 #include "base.c"
 
 struct {

@@ -23,6 +23,7 @@ STRUCT(Tag) {
     char name[64];
     f32 x, y;
     f32 rot;
+    f32 radius;
 };
 
 STRUCT(Sprite) {
@@ -138,6 +139,7 @@ static void load_sprite(Sprite* s, resvg_options* opt) {
         t->x = cx - x0;
         t->y = cy - y0;
         t->rot = 3.14 / 2 - atan2f(-(vy[farthest_i] - cy), vx[farthest_i] - cx);
+        t->radius = max(fabs(sh->paths->bounds[0] - sh->paths->bounds[2]), fabs(sh->paths->bounds[1] - sh->paths->bounds[3])) / 2;
 
         i32 n = c_str_len(sh->id);
         for (i32 i = n-1; i >= 0; i--) {
@@ -260,7 +262,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     printfb(f, "    SPRITE_COUNT\n} SpriteId;\n\n");
 
     printfb(f,
-        "typedef struct %{ SpriteTag tag; vec2s pos; f32 rot; } SpriteTagInfo;\n"
+        "typedef struct %{ SpriteTag tag; vec2s pos; f32 rot, radius; } SpriteTagInfo;\n"
         "typedef struct %{\n"
         "    i32 page;\n"
         "    i32 x, y, w, h;\n"
@@ -272,7 +274,7 @@ static void write_header(SpriteSlice sprites, i32 pages, cstr dir) {
     printfb(f, "static SpriteTagInfo sprite_tags[] = %{\n");
     slice_for_each(sprites, s, Sprite)
         for (i32 i = s->n_tags - 1; i >= 0; i--)
-            printfb(f, "    %{ SpriteTag{}, %{%{{}, {}}}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y, s->tags[i].rot);
+            printfb(f, "    %{ SpriteTag{}, %{%{{}, {}}}, {}, {} },\n", s->tags[i].name, s->tags[i].x, s->tags[i].y, s->tags[i].rot, s->tags[i].radius);
     printfb(f, "};\n\n");
 
     printfb(f, "static SpriteInfo sprites[SPRITE_COUNT] = %{\n");

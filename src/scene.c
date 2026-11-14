@@ -49,7 +49,7 @@ typedef enum {
 
 Transform transform_calculate_world(Transform parent, Transform local) {
     return (Transform) {
-      .pos = vec2_add(parent.pos, vec2_mul(vec2_rotate(local.pos, parent.rot), parent.scale)),
+      .pos = vec2_add(parent.pos, vec2_rotate(vec2_mul(local.pos, parent.scale), parent.rot)),
       .rot = parent.rot + local.rot,
       .scale = vec2_mul(parent.scale, local.scale),
     };
@@ -61,6 +61,11 @@ Transform transform_calculate_local(Transform parent, Transform world) {
         .rot = world.rot - parent.rot,
         .scale = vec2_div(world.scale, parent.scale),
     };
+}
+
+vec2s entity_local_to_world(Entity* e, vec2s local)
+{
+    return vec2_add(e->world.pos, vec2_rotate(vec2_mul(local, e->world.scale), e->world.rot));
 }
 
 void entity_transform_apply(Entity* entity, Entity* parent, EntityTransformUpdate update) {

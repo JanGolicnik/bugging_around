@@ -12,7 +12,7 @@
 <rect x="-5.24537e-07" y="-2.05444e-06" width="47" height="12" rx="6" fill="#A4A4A4"/>
 </g>
 <g id="origin">
-<circle id="_origin" cx="24" cy="126" r="4" fill="#D9D9D9" fill-opacity="0.01"/>
+<circle id="_origin" cx="24" cy="126" r="4" fill="#D9D9D9"/>
 </g>
 </g>
 </svg>

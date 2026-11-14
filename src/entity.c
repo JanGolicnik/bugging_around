@@ -5,7 +5,7 @@ typedef enum {
     CT_Transform = BIT(0),
     CT_IsHidden = BIT(1),
     CT_Sprite = BIT(2),
-    CT_Physics = BIT(3),
+    CT_Collision = BIT(3),
     CT_Ui = BIT(4),
     CT_Bug = BIT(5),
     CT_BugLegs = BIT(6),
@@ -39,6 +39,11 @@ typedef enum {
     Layer_Count
 } Layer;
 
+typedef enum {
+    CollisionGroup_None,
+    CollisionGroup_Centipede = BIT(1),
+} CollisionGroup;
+
 STRUCT(Entity) {
     str name;
     Scene* scene;
@@ -53,9 +58,12 @@ STRUCT(Entity) {
         Layer layer;
     } sprite;
 
-    struct PhysicsC {
-        f32 vel_x, vel_y;
-    } physics;
+    struct CollisionC {
+        vec2s pos;
+        f32 radius;
+        bool fixed;
+        CollisionGroup group;
+    } collision;
 
     struct UiC {
         bool _;
@@ -104,4 +112,22 @@ SpriteTagInfo* sprite_get_tag(SpriteId sprite, SpriteTag tag)
             return (SpriteTagInfo*)t;
     }
     return nullptr;
+}
+
+vec2s sprite_get_tag_pos(SpriteId id, SpriteTag tag)
+{
+    const SpriteInfo* s = &sprites[id];
+    for (u32 i = 0; s->n_tags; i++)
+    {
+        const SpriteTagInfo* t = &sprite_tags[s->tags_i + i];
+        if (t->tag == tag) return t->pos;
+    }
+    return (vec2s){ 0 };
+}
+
+struct CollisionC collision_from_sprite(SpriteId id, CollisionGroup group)
+{
+    SpriteTagInfo* tag = sprite_get_tag(id, SpriteTag_collision);
+    if (!tag) return (struct CollisionC){ 0 };
+    return (struct CollisionC){ .radius = tag->radius, .pos = tag->pos, .group = group };
 }

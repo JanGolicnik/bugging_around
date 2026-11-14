@@ -1,5 +1,3 @@
-#include "marrow/genarr.h"
-#include "ripple/ripple.h"
 #define BUGGIN_INPUT
 #include "base.c"
 
