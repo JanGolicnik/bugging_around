@@ -59,7 +59,7 @@ STRUCT(Entity) {
         Layer layer;
         str text;
         f32 text_size;
-        vec3s tint;
+        vec4s tint;
     } sprite;
 
     struct CollisionC {

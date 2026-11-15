@@ -23,7 +23,7 @@ struct VertexOutput {
     @builtin(position) position: vec4f,
     @location(0) uv: vec2f,
     @location(1) @interpolate(flat) page: u32,
-    @location(2) tint: vec3f,
+    @location(2) tint: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> shader_data: ShaderData;
@@ -45,6 +45,7 @@ fn vs_main(@builtin(vertex_index) index: u32, i: InstanceInput) -> VertexOutput 
     out.position = vec4f(position, 0.0, 1.0);
     out.uv = mix(sprite.uv0, sprite.uv1, p.xy + 0.5);
     out.page = sprite.page;
+    out.tint = i.tint;
     return out;
 }
 

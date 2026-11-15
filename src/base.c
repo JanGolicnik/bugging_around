@@ -36,6 +36,11 @@
 #define VEC3_ONE  GLMS_VEC3_ONE
 #define VEC3_ZERO GLMS_VEC3_ZERO
 
+#define VEC4_ONE (vec4s){{ 1.0f, 1.0f, 1.0f, 1.0f }}
+#define VEC4_ZERO GLMS_VEC4_ZERO
+
+#define RGB(r, g, b) (vec4s){{ r, g, b, 1.0f }}
+
 static u8Slice read_file(cstr path, Allocator* a) {
     FILE* f = fopen(path, "rb");
     fseek(f, 0, SEEK_END); long n = ftell(f);

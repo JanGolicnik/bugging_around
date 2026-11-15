@@ -354,12 +354,14 @@ bool game_init(void)
         .sprite.text_size = 128.0f
     );
 
-    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("woah2"),
+    EntityHandle tes = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("woah2"),
         .sprite.text = str("jaz\nsem\njan"),
         .sprite.layer = Layer_Debug,
+        .sprite.tint = RGB(0.5, 1.0, 1.0),
         .world.pos.y = 256.0f,
-        .world.scale = VEC2_ONE
+        .world.scale = VEC2_ONE,
     );
+    tween(tes, sprite.tint.r, 1.0f, .3f, EASE_INOUT, .flags = Tween_Loop);
 
     return true;
 }
