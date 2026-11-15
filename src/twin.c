@@ -4,21 +4,13 @@
 #define MAX_TWEENS 1024
 
 typedef enum {
-    EASE_LINEAR,
-    EASE_IN, // easeincubic
-    EASE_OUT, // easeoutcubic
-    EASE_INOUT, // easeinoutexpo
-    EASE_OUT_BACK, // easeoutback
-    EASE_INOUT_BACK, // easeinoutback
-    EASE_OUT_ELASTIC // easeoutelastic
-} Easing;
-
-typedef enum {
     Tween_Playing = BIT(0),
     Tween_From = BIT(1),
     Tween_Relative = BIT(2),
     Tween_Loop = BIT(3),
     Tween_Delete = BIT(4),
+    Tween_Local = BIT(5),
+    Tween_World = BIT(6),
 } TweenFlags;
 
 typedef struct {
@@ -35,21 +27,6 @@ struct {
     Tween tweens[MAX_TWEENS];
     u32 n_tweens;
 } tweens;
-
-f32 ease_apply(f32 t, Easing easing)
-{
-    switch (easing)
-    {
-        case EASE_LINEAR: return t;
-        case EASE_IN: { return t * t * t; }
-        case EASE_OUT: { return 1 - powf(1 - t, 3.0f); }
-        case EASE_INOUT: { return t <= 0.0f ? 0.0f : t >= 1.0f ? 1.0f : t < 0.5f ? powf(2.0f, 20.0f * t - 10.0f) / 2.0f : (2.0f - powf(2.0f, -20.0f * t + 10.0f)) / 2.0f; }
-        case EASE_OUT_BACK: { f32 c1 = 1.70158f; f32 c3 = c1 + 1.0f; return 1.0f + c3 * powf(t - 1.0f, 3.0f) + c1 * powf(t - 1.0f, 2.0f); }
-        case EASE_INOUT_BACK: { f32 c1 = 1.70158f; f32 c2 = c1 * 1.525f; return t < 0.5f ? (powf(2.0f * t, 2.0f) * ((c2 + 1.0f) * 2.0f * t - c2)) / 2.0f : (powf(2.0f * t - 2.0f, 2.0f) * ((c2 + 1.0f) * (t * 2.0f - 2.0f) + c2) + 2.0f) / 2.0f; }
-        case EASE_OUT_ELASTIC: { f32 c4 = (2.0f * PI) / 3.0f; return t <= 0.0f ? 0.0f : t >= 1.0f ? 1.0f : powf(2.0f, -10.0f * t) * sin((t * 10.0f - 0.75f) * c4) + 1.0f; }
-    }
-    return t;
-}
 
 void tweens_update(Scene* scene, f32 dt)
 {
@@ -84,9 +61,16 @@ void tweens_update(Scene* scene, f32 dt)
 
         tween->time += step;
         f32 progress = clamp(tween->time / tween->duration, 0.0f, 1.0f);
-        f32 t = ease_apply(progress, tween->ease);
+        f32 t = mrw_ease(progress, tween->ease);
         for (i32 j = 0; j < tween->count; j++)
             val[j] = tween->from[j] + (tween->to[j] - tween->from[j]) * t;
+
+        if (FLAG_HAS(tween->flags, Tween_World)) {
+            entity_apply_world(e);
+        }
+        if (FLAG_HAS(tween->flags, Tween_Local)) {
+            entity_apply_local(e);
+        }
 
         if (progress >= 1.0f)
         {

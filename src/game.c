@@ -454,7 +454,7 @@ void game_update(void)
             .world.pos = finger_pos(finger),
             .world.scale = {{ 1.0f, 1.0f }}
         );
-        tween(e, world.pos.x, 100.0f, 2.0f, EASE_OUT_ELASTIC, .flags = Tween_Relative);
+        tween(e, world.pos.x, 100.0f, 2.0f, EASE_OUT_ELASTIC, .flags = Tween_Relative | Tween_World);
         tween(e, world.scale, VEC2_ZERO, 1.0f, EASE_OUT, .delay = 1.0f, .flags = Tween_Delete);
     }
 
