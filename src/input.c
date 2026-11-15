@@ -19,7 +19,6 @@ struct {
 
 void input_on_finger(u32 id, f32 x, f32 y, bool down, bool motion)
 {
-    mrw_debug("input on figner {}", id);
     // find existing finger
     Finger* f = nullptr;
     GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
@@ -83,6 +82,21 @@ bool is_finger_down_at(f32 x, f32 y, f32 radius, FingerId* out)
         }
     }
     return out->valid;
+}
+
+bool is_finger_pressed_at(f32 x, f32 y, f32 radius, FingerId* id)
+{
+    GENARR_ITER_ALIAS(Finger, f) iter = { 0 };
+    while (genarr_next_valid(input.fingers, &iter))
+    {
+        Finger* f = iter.f;
+        if (f->down_at == timer.tick && vec2_norm((vec2s){{ f->x - x, f->y - y }}) < radius)
+        {
+            *id = iter.handle;
+            return true;
+        }
+    }
+    return false;
 }
 
 bool is_finger_down(FingerId id)

@@ -66,12 +66,16 @@ static f32 vec2_angle_to(vec2s from, vec2s to)
 #ifndef BUGGIN_SCENE
 #include "scene.c"
 
+#ifndef BUGGIN_TWIN
+#include "twin.c"
+
 #ifndef BUGGIN_DRAW
 #include "draw.c"
 
 #ifndef BUGGIN_GAME
 #include "game.c"
 
+#endif
 #endif
 #endif
 #endif

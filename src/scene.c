@@ -119,7 +119,6 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
         }
         else
         {
-            if (vec2_norm2(entity->world.scale) == 0.0f) entity->world.scale = VEC2_ONE;
             entity_apply_world(entity);
         }
     }
@@ -130,6 +129,11 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
 
 #define scene_create_entity(_scene, _comps, ...)\
     _scene_create_entity((_scene), genarr_add((_scene)->entities, (Entity){ .components = (_comps), __VA_ARGS__ }))
+
+void scene_delete_entity(Scene* scene, EntityHandle handle)
+{
+    genarr_remove(scene->entities, handle);
+}
 
 
 Entity* entity_first_child_with(Entity* e, Component c)

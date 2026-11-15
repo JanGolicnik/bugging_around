@@ -443,6 +443,21 @@ void game_update(void)
     while (genarr_next_valid(input.fingers, &iter))
         game_text("finger {} x: {} y: {}", iter.f->id, iter.f->x, iter.f->y);
 
+    tweens_update(game.scene, timer.dt);
+
+    FingerId finger = { 0 };
+    if (is_finger_pressed_at(0.0f, 0.0f, 100.0f, &finger))
+    {
+        EntityHandle e = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = sstr("test"),
+            .sprite.id = SPRITE_DPAD_PAD,
+            .sprite.layer = Layer_Debug,
+            .world.pos = finger_pos(finger),
+            .world.scale = {{ 1.0f, 1.0f }}
+        );
+        tween(e, world.pos.x, 100.0f, 2.0f, EASE_OUT_ELASTIC, .flags = Tween_Relative);
+        tween(e, world.scale, VEC2_ZERO, 1.0f, EASE_OUT, .delay = 1.0f, .flags = Tween_Delete);
+    }
+
     game_update_ui();
 
     game_update_bugs();
