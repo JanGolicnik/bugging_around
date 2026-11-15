@@ -123,6 +123,11 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
         }
     }
 
+    if (entity_has(entity, CT_Sprite))
+    {
+        if (entity->sprite.text_size == 0.0f) entity->sprite.text_size = 64.0f;
+        if (vec3_norm2(entity->sprite.tint) == 0.0f) entity->sprite.tint = VEC3_ONE;
+    }
 
     return handle;
 }

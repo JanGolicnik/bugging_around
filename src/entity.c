@@ -53,9 +53,13 @@ STRUCT(Entity) {
 
     Transform local, world;
 
+    // tehse both belong together i guess
     struct {
         SpriteId id;
         Layer layer;
+        str text;
+        f32 text_size;
+        vec3s tint;
     } sprite;
 
     struct CollisionC {

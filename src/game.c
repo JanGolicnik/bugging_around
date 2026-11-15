@@ -143,6 +143,144 @@ void game_update_bugs(void)
     }
 }
 
+EntityHandle spawn_stinkbug(vec2s pos)
+{
+    EntityHandle h = scene_create_entity(game.scene, CT_Transform | CT_Bug | CT_Collision, .name = str("stinkbug"),
+        .collision = collision_from_sprite(SPRITE_STINKBUG, 0),
+        .world.pos = pos,
+        .world.scale = VEC2_ONE
+    );
+    EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
+        .parent = h,
+        .sprite.id = SPRITE_STINKBUG,
+        .sprite.layer = Layer_BugsBodies
+    );
+    for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
+    {
+        const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
+        if (t->tag == SpriteTag_leg_left || t->tag == SpriteTag_leg_right)
+        {
+            EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
+                .parent = body,
+                .local.pos = t->pos,
+                .local.rot = t->rot,
+                .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
+            );
+            scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
+                .parent = joint,
+                .sprite.id = SPRITE_STINKBUG_LEG,
+                .sprite.layer = Layer_BugsLegs,
+            );
+        }
+        else if (t->tag == SpriteTag_turret)
+        {
+            EntityHandle turret = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Turret, .name = str("cannon !!"),
+                .parent = body,
+                .local.pos = t->pos,
+                .local.rot = t->rot,
+                .sprite.id = SPRITE_CANNON1,
+                .sprite.layer = Layer_Turrets,
+            );
+            SpriteTagInfo* t = sprite_get_tag(SPRITE_CANNON1, SpriteTag_turret);
+            scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("barrel"),
+                .parent = turret,
+                .local.pos = t->pos,
+                .local.rot = t->rot,
+                .sprite.id = SPRITE_CANNON1_BARREL,
+                .sprite.layer = Layer_Barrels,
+            );
+        }
+    }
+    return h;
+}
+
+EntityHandle spawn_ladybug(vec2s pos)
+{
+    EntityHandle h = scene_create_entity(game.scene, CT_Transform | CT_Bug | CT_Collision, .name = str("ladybug"),
+        .collision = collision_from_sprite(SPRITE_LADYBUG, 0),
+        .world.pos = pos,
+        .world.scale = VEC2_ONE
+    );
+    EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
+        .parent = h,
+        .sprite.id = SPRITE_LADYBUG,
+        .sprite.layer = Layer_BugsBodies
+    );
+    for (u32 i = 0; i < sprites[SPRITE_LADYBUG].n_tags; i++)
+    {
+        const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_LADYBUG].tags_i + i];
+        if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
+        EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
+            .parent = body,
+            .local.pos = t->pos,
+            .local.rot = t->rot,
+            .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
+        );
+        scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
+            .parent = joint,
+            .sprite.id = SPRITE_LADYBUG_LEG,
+            .sprite.layer = Layer_BugsLegs,
+        );
+    }
+    return h;
+}
+
+EntityHandle spawn_centipede(vec2s pos)
+{
+    EntityHandle h = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("centipede"), .sprite.id = SPRITE_CENTIPEDE);
+    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
+        .parent = h,
+        .sprite.id = SPRITE_CENTIPEDE,
+        .sprite.layer = Layer_BugsHead
+    );
+
+    u32 n_segments = 0;
+    EntityHandle segments[10] = { 0 };
+    for (i32 i = sprites[SPRITE_CENTIPEDE].n_tags - 1; i >= 0; i--)
+    {
+        const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_CENTIPEDE].tags_i + i];
+        SpriteId sprite = SPRITE_COUNT;
+        if (t->tag == SpriteTag_spine_small) sprite = SPRITE_CENTIPEDE_BODY_SMALL;
+        else if (t->tag == SpriteTag_spine_big) sprite = SPRITE_CENTIPEDE_BODY_BIG;
+        else if (t->tag == SpriteTag_spine_medium) sprite = SPRITE_CENTIPEDE_BODY_MEDIUM;
+        else if (t->tag == SpriteTag_spine_tail) sprite = SPRITE_CENTIPEDE_TAIL;
+        else continue;
+
+        EntityHandle body = segments[n_segments++] =
+            scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Link | CT_Collision, .name = str("body"),
+            .sprite.id = sprite,
+            .sprite.layer = Layer_BugsBodies,
+        );
+
+        for (u32 j = 0; j < sprites[sprite].n_tags; j++)
+        {
+            const SpriteTagInfo* t = &sprite_tags[sprites[sprite].tags_i + j];
+            if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
+            EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
+                .parent = body,
+                .local.pos = t->pos,
+                .local.rot = t->rot,
+                .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
+            );
+            scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
+                .parent = joint,
+                .sprite.id = SPRITE_CENTIPEDE_LEG,
+                .sprite.layer = Layer_BugsLegs,
+            );
+        }
+    }
+
+    for (u32 i = 0; i < n_segments; i++)
+    {
+        Entity* e = scene_get_entity(game.scene, segments[i]);
+        e->link.follow = i == (n_segments - 1) ? h : segments[i + 1];
+        Entity* follow = scene_get_entity(game.scene, e->link.follow);
+        e->link.dist = vec2_norm(sprite_get_tag(follow->sprite.id, SpriteTag_follow)->pos) * 0.85f;
+        e->collision = collision_from_sprite(e->sprite.id, CollisionGroup_Centipede);
+    }
+    return h;
+}
+
 bool game_init(void)
 {
     game.mem.stable = nullptr;
@@ -155,133 +293,9 @@ bool game_init(void)
         game.anchors[i] = scene_create_entity(game.scene, CT_Transform, .name = _anchor_names[i]);
     }
 
-    { // stinkbug
-        game.stinkbug = scene_create_entity(game.scene, CT_Transform | CT_Bug | CT_Collision, .name = str("stinkbug"),
-            .collision = collision_from_sprite(SPRITE_STINKBUG, 0),
-        );
-        EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
-            .parent = game.stinkbug,
-            .sprite.id = SPRITE_STINKBUG,
-            .sprite.layer = Layer_BugsBodies
-        );
-        for (u32 i = 0; i < sprites[SPRITE_STINKBUG].n_tags; i++)
-        {
-            const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_STINKBUG].tags_i + i];
-            if (t->tag == SpriteTag_leg_left || t->tag == SpriteTag_leg_right)
-            {
-                EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
-                    .parent = body,
-                    .local.pos = t->pos,
-                    .local.rot = t->rot,
-                    .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
-                );
-                scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
-                    .parent = joint,
-                    .sprite.id = SPRITE_STINKBUG_LEG,
-                    .sprite.layer = Layer_BugsLegs,
-                );
-            }
-            else if (t->tag == SpriteTag_turret)
-            {
-                EntityHandle turret = scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Turret, .name = str("cannon !!"),
-                    .parent = body,
-                    .local.pos = t->pos,
-                    .local.rot = t->rot,
-                    .sprite.id = SPRITE_CANNON1,
-                    .sprite.layer = Layer_Turrets,
-                );
-                SpriteTagInfo* t = sprite_get_tag(SPRITE_CANNON1, SpriteTag_turret);
-                scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("barrel"),
-                    .parent = turret,
-                    .local.pos = t->pos,
-                    .local.rot = t->rot,
-                    .sprite.id = SPRITE_CANNON1_BARREL,
-                    .sprite.layer = Layer_Barrels,
-                );
-            }
-        }
-    }
-
-    { // ladybug
-        game.ladybug = scene_create_entity(game.scene, CT_Transform | CT_Bug | CT_Collision, .name = str("ladybug"),
-            .collision = collision_from_sprite(SPRITE_LADYBUG, 0),
-        );
-        EntityHandle body = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
-            .parent = game.ladybug,
-            .sprite.id = SPRITE_LADYBUG,
-            .sprite.layer = Layer_BugsBodies
-        );
-        for (u32 i = 0; i < sprites[SPRITE_LADYBUG].n_tags; i++)
-        {
-            const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_LADYBUG].tags_i + i];
-            if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
-            EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
-                .parent = body,
-                .local.pos = t->pos,
-                .local.rot = t->rot,
-                .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
-            );
-            scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
-                .parent = joint,
-                .sprite.id = SPRITE_LADYBUG_LEG,
-                .sprite.layer = Layer_BugsLegs,
-            );
-        }
-    }
-
-    { // centipede
-        game.centipede = scene_create_entity(game.scene, CT_Transform | CT_Bug, .name = str("centipede"), .sprite.id = SPRITE_CENTIPEDE);
-        scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("sprite"),
-            .parent = game.centipede,
-            .sprite.id = SPRITE_CENTIPEDE,
-            .sprite.layer = Layer_BugsHead
-        );
-
-        u32 n_segments = 0;
-        EntityHandle segments[10] = { 0 };
-        for (i32 i = sprites[SPRITE_CENTIPEDE].n_tags - 1; i >= 0; i--)
-        {
-            const SpriteTagInfo* t = &sprite_tags[sprites[SPRITE_CENTIPEDE].tags_i + i];
-            SpriteId sprite = SPRITE_COUNT;
-            if (t->tag == SpriteTag_spine_small) sprite = SPRITE_CENTIPEDE_BODY_SMALL;
-            else if (t->tag == SpriteTag_spine_big) sprite = SPRITE_CENTIPEDE_BODY_BIG;
-            else if (t->tag == SpriteTag_spine_medium) sprite = SPRITE_CENTIPEDE_BODY_MEDIUM;
-            else if (t->tag == SpriteTag_spine_tail) sprite = SPRITE_CENTIPEDE_TAIL;
-            else continue;
-
-            EntityHandle body = segments[n_segments++] =
-                scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Link | CT_Collision, .name = str("body"),
-                .sprite.id = sprite,
-                .sprite.layer = Layer_BugsBodies,
-            );
-
-            for (u32 j = 0; j < sprites[sprite].n_tags; j++)
-            {
-                const SpriteTagInfo* t = &sprite_tags[sprites[sprite].tags_i + j];
-                if (t->tag != SpriteTag_leg_left && t->tag != SpriteTag_leg_right) continue;
-                EntityHandle joint = scene_create_entity(game.scene, CT_Transform, .name = str("leg_joint"),
-                    .parent = body,
-                    .local.pos = t->pos,
-                    .local.rot = t->rot,
-                    .local.scale = (vec2s){{ t->tag == SpriteTag_leg_left ? -1.0f : 1.0f, 1.0f }}
-                );
-                scene_create_entity(game.scene, CT_Transform | CT_Sprite | CT_Leg, .name = str("leg"),
-                    .parent = joint,
-                    .sprite.id = SPRITE_CENTIPEDE_LEG,
-                    .sprite.layer = Layer_BugsLegs,
-                );
-            }
-        }
-
-        for (u32 i = 0; i < n_segments; i++)
-        {
-            Entity* e = scene_get_entity(game.scene, segments[i]);
-            e->link.follow = i == (n_segments - 1) ? game.centipede : segments[i + 1];
-            Entity* follow = scene_get_entity(game.scene, e->link.follow);
-            e->link.dist = vec2_norm(sprite_get_tag(follow->sprite.id, SpriteTag_follow)->pos) * 0.85f;
-            e->collision = collision_from_sprite(e->sprite.id, CollisionGroup_Centipede);
-        }
-    }
+    game.stinkbug = spawn_stinkbug(VEC2_ZERO);
+    game.ladybug = spawn_ladybug(VEC2_ZERO);
+    game.centipede = spawn_centipede(VEC2_ZERO);
 
     EntityHandle leaves = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("leaves"),
         .parent = game.anchors[Anchor_mt],
@@ -332,6 +346,19 @@ bool game_init(void)
     game.dpad.pad = scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("dpad_pad"),
         .parent = game.dpad.root,
         .sprite.id = SPRITE_DPAD_PAD
+    );
+
+    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("woah"),
+        .sprite.text = str("HELLO"),
+        .sprite.layer = Layer_Debug,
+        .sprite.text_size = 128.0f
+    );
+
+    scene_create_entity(game.scene, CT_Transform | CT_Sprite, .name = str("woah2"),
+        .sprite.text = str("jaz\nsem\njan"),
+        .sprite.layer = Layer_Debug,
+        .world.pos.y = 256.0f,
+        .world.scale = VEC2_ONE
     );
 
     return true;
@@ -477,6 +504,9 @@ void game_tick(void)
 
     mrw_bump_reset(&game.mem._frame);
 
+    draw.scaling = 2.0f;
+    draw_set_size(1179 / 2, 2556 /2);
+
     time_update();
 
     RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
@@ -505,9 +535,11 @@ SDL_AppResult game_on_event(SDL_Event* e)
             if (draw.surface.h.valid)
                 reni_release_surface(draw.reni, draw.surface);
             draw.surface = (ReniSurface){ 0 };
+            audio_suspend();
         } break;
         case SDL_EVENT_DID_ENTER_FOREGROUND: {
             game.in_background = false;
+            audio_resume();
         } break;
 
         case SDL_EVENT_MOUSE_BUTTON_DOWN:

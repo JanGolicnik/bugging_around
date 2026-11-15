@@ -9,6 +9,12 @@
 #define STBI_ONLY_PNG
 #include <stb_image.h>
 
+#define STB_RECT_PACK_IMPLEMENTATION
+#include <stb_rect_pack.h>
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
+
 #include <marrow/marrow.h>
 
 #define RENI_BACKEND_SDL3
@@ -26,6 +32,9 @@
 
 #define VEC2_ONE  GLMS_VEC2_ONE
 #define VEC2_ZERO GLMS_VEC2_ZERO
+
+#define VEC3_ONE  GLMS_VEC3_ONE
+#define VEC3_ZERO GLMS_VEC3_ZERO
 
 static u8Slice read_file(cstr path, Allocator* a) {
     FILE* f = fopen(path, "rb");
