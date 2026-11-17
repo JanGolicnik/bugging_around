@@ -2,7 +2,8 @@
 #include "base.c"
 
 #define FONT_FIRST_CHAR 32
-#define N_FONT_CHARS 96
+#define FONT_N_CHARS 32
+#define FONT_BASE_SIZE 64.0f
 
 cstr common_includes[] = {
     "./res/shaders/common.wgsl"
@@ -10,10 +11,12 @@ cstr common_includes[] = {
 
 STRUCT(Instance)
 {
-    f32 x, y;
-    f32 sx, sy;
+    f32 pos[2];
+    f32 size[2];
     f32 rot;
     SpriteId sprite;
+    f32 opacity;
+    f32 _free;
     f32 tint[4];
 };
 
@@ -46,6 +49,9 @@ struct {
         struct {
             f32 width, height;
             f32 time;
+            f32 param1;
+            f32 param2;
+            f32 param3;
         } data;
     } shader_data;
 
@@ -58,7 +64,7 @@ struct {
     } atlas;
 
     struct {
-        Glyph glyphs[N_FONT_CHARS];
+        Glyph glyphs[FONT_N_CHARS];
         f32 ascent, descent, line_gap;
     } text;
 
@@ -87,7 +93,7 @@ static void draw_bake_font(ReniTexture texture, u32 layer)
     if (!stbtt_InitFont(&font, file.start, stbtt_GetFontOffsetForIndex(file.start, 0)))
         mrw_abort("failed loading font");
 
-    f32 scale = stbtt_ScaleForPixelHeight(&font, 64.0f);
+    f32 scale = stbtt_ScaleForPixelHeight(&font, FONT_BASE_SIZE);
 
     i32 ascent, descent, line_gap;
     stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);
@@ -95,10 +101,10 @@ static void draw_bake_font(ReniTexture texture, u32 layer)
     draw.text.descent = descent * scale;
     draw.text.line_gap = line_gap * scale;
 
-    u8* sdfs[N_FONT_CHARS] = { 0 };
-    stbrp_rect rects[N_FONT_CHARS] = { 0 };
+    u8* sdfs[FONT_N_CHARS] = { 0 };
+    stbrp_rect rects[FONT_N_CHARS] = { 0 };
     i32 n_rects = 0;
-    for (i32 i = 0; i < N_FONT_CHARS; i++)
+    for (i32 i = 0; i < FONT_N_CHARS; i++)
     {
         i32 cp = FONT_FIRST_CHAR + i;
         Glyph* g = &draw.text.glyphs[i];
@@ -154,7 +160,7 @@ static void draw_bake_font(ReniTexture texture, u32 layer)
         g->uv1[1] = (f32)(rect->y + h) / ATLAS_SIZE;
     }
 
-    for (i32 i = 0; i < N_FONT_CHARS; i++)
+    for (i32 i = 0; i < FONT_N_CHARS; i++)
         stbtt_FreeSDF(sdfs[i], font.userdata);
 
     reni_texture_write_layer(draw.reni, texture, (u8Slice)slice_to(data, layer_size), layer);
@@ -205,7 +211,7 @@ void draw_load_sprites(void)
         .filter = ReniSamplerFilterMode_Linear
     });
 
-    GPUSprite sprites_buffer[SPRITE_COUNT + N_FONT_CHARS] = { 0 };
+    GPUSprite sprites_buffer[SPRITE_COUNT + FONT_N_CHARS] = { 0 };
     array_for_each_i(sprites, i)
     {
         const SpriteInfo* s = &sprites[i];
@@ -221,7 +227,7 @@ void draw_load_sprites(void)
         sprites_buffer[i] = out;
     }
 
-    for (i32 i = 0; i < N_FONT_CHARS; i++)
+    for (i32 i = 0; i < FONT_N_CHARS; i++)
     {
         const Glyph* g = &draw.text.glyphs[i];
         sprites_buffer[SPRITE_COUNT + i] = (GPUSprite){
@@ -283,12 +289,12 @@ void draw_init_shaders(void)
                 .stride = sizeof(Instance),
                 .attributes[0] = {
                     .location = 0,
-                    .offset = offsetof(Instance, x),
+                    .offset = offsetof(Instance, pos),
                     .format = ReniVertexFormat_Float32x2,
                 },
                 .attributes[1] = {
                     .location = 1,
-                    .offset = offsetof(Instance, sx),
+                    .offset = offsetof(Instance, size),
                     .format = ReniVertexFormat_Float32x2,
                 },
                 .attributes[2] = {
@@ -303,6 +309,11 @@ void draw_init_shaders(void)
                 },
                 .attributes[4] = {
                     .location = 4,
+                    .offset = offsetof(Instance, opacity),
+                    .format = ReniVertexFormat_Float32,
+                },
+                .attributes[5] = {
+                    .location = 5,
                     .offset = offsetof(Instance, tint),
                     .format = ReniVertexFormat_Float32x4,
                 },
@@ -384,11 +395,11 @@ vec2s draw_size(void) { return (vec2s){{ draw_width(), draw_height() }}; }
 
 bool draw_is_char_drawable(u8 c)
 {
-    if (c < FONT_FIRST_CHAR || c >= FONT_FIRST_CHAR + N_FONT_CHARS) return false;
+    if (c < FONT_FIRST_CHAR || c >= FONT_FIRST_CHAR + FONT_N_CHARS) return false;
     return draw.text.glyphs[c - FONT_FIRST_CHAR].size_px[0] > 0.0f;
 }
 
-u32 draw_text_daw_len(str text)
+u32 draw_text_draw_len(str text)
 {
     u32 n = 0;
     slice_for_each(text, c, char) n += draw_is_char_drawable((u8)*c);
@@ -447,55 +458,49 @@ void draw_scene(Scene* scene, f32 time)
         while (scene_next_entity(scene, &iter))
         {
             Entity* e = iter.entity;
+            f32 scale = e->sprite.text_size / FONT_BASE_SIZE;
+            Instance base = (Instance) {
+                .pos = { e->world.pos.x, e->world.pos.y },
+                .scale = { e->world.scale.x * scale, e->world.scale.y * scale },
+                .rot = e->world.rot,
+                .sprite = e->sprite.id,
+                .opacity = e->sprite.opacity,
+                .tint = { e->sprite.tint.r, e->sprite.tint.g, e->sprite.tint.b, e->sprite.tint.a },
+            };
+            u32 layer = layer_offset[e->sprite.layer];
+            u32* n = &n_sprites_per_layer[e->sprite.layer];
             if (e->sprite.text.start)
             {
-                f32 scale = e->sprite.text_size / 64.0f;
                 f32 line_height = (draw.text.ascent - draw.text.descent + draw.text.line_gap) * scale;
-                vec2s pen = {{ 0.0f, 0.0f }};
+                vec2s pos = {{ 0.0f, 0.0f }};
 
                 slice_for_each(e->sprite.text, c, char)
                 {
                     u8 ch = (u8)*c;
                     if (ch == '\n')
                     {
-                        pen.x = 0.0f;
-                        pen.y -= line_height;
+                        pos.x = 0.0f;
+                        pos.y -= line_height;
                         continue;
                     }
 
-                    if (ch < FONT_FIRST_CHAR || ch >= FONT_FIRST_CHAR + N_FONT_CHARS)
+                    if (ch < FONT_FIRST_CHAR || ch >= FONT_FIRST_CHAR + FONT_N_CHARS)
                         continue;
 
                     if (draw_is_char_drawable(ch))
                     {
-                        vec2s p = entity_local_to_world(e, pen);
-                        u32 i = layer_offset[e->sprite.layer] + n_sprites_per_layer[e->sprite.layer]++;
+                        vec2s p = entity_local_to_world(e, pos);
+                        base.x = p.x; base.y = p.y; base.sprite = (SpriteId)(SPRITE_COUNT + (ch - FONT_FIRST_CHAR));
                         draw.instances.n_items++;
-                        draw.instances.items[i] = (Instance){
-                            .x = p.x, .y = p.y,
-                            .sx = e->world.scale.x * scale,
-                            .sy = e->world.scale.y * scale,
-                            .rot = e->world.rot,
-                            .sprite = (SpriteId)(SPRITE_COUNT + (ch - FONT_FIRST_CHAR))
-                        };
-                        memcpy(draw.instances.items[i].tint, (void*)&e->sprite.tint, sizeof(e->sprite.tint));
+                        draw.instances.items[layer + *(n)++] = base;
                     }
-                    pen.x += draw.text.glyphs[ch - FONT_FIRST_CHAR].advance * scale;
+                    pos.x += draw.text.glyphs[ch - FONT_FIRST_CHAR].advance * scale;
                 }
             }
             else
             {
-                u32 i = layer_offset[e->sprite.layer] + n_sprites_per_layer[e->sprite.layer]++;
                 draw.instances.n_items++;
-                draw.instances.items[i] = (Instance) {
-                    .x = e->world.pos.x,
-                    .y = e->world.pos.y,
-                    .sx = e->world.scale.x,
-                    .sy = e->world.scale.y,
-                    .rot = e->world.rot,
-                    .sprite = e->sprite.id
-                };
-                memcpy(draw.instances.items[i].tint, (void*)&e->sprite.tint, sizeof(e->sprite.tint));
+                draw.instances.items[layer + *(n)++] = base;
             }
         }
         reni_buffer_write(draw.reni, draw.instance_buffer, slice_vektor_u8(draw.instances), 0);

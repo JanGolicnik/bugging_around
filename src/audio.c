@@ -7,18 +7,18 @@
 
 typedef GenarrHandle SoundHandle;
 
-typedef enum {
+ENUM(AudioLayer, u16) {
     AudioLayer_Sfx,
     AudioLayer_Ui,
     AudioLayer_Music,
     AudioLayer_Count
-} AudioLayer;
+};
 
-typedef enum {
+ENUM(SoundId, u16) {
     Sound_Click,
     Sound_Music,
     Sound_Count,
-} SoundId;
+};
 
 STRUCT(SoundInfo) {
     cstr path;

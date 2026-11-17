@@ -1,7 +1,7 @@
 #define BUGGIN_ENTITY
 #include "base.c"
 
-typedef enum {
+ENUM(Component, u16) {
     CT_Transform = BIT(0),
     CT_IsHidden = BIT(1),
     CT_Sprite = BIT(2),
@@ -12,7 +12,7 @@ typedef enum {
     CT_Leg = BIT(7),
     CT_Link = BIT(8),
     CT_Turret = BIT(9),
-} Component;
+};
 
 typedef struct Scene Scene;
 
@@ -25,7 +25,7 @@ STRUCT(Transform)
     f32   rot;
 };
 
-typedef enum {
+ENUM(Layer, u16) {
     Layer_Default = 0,
     Layer_Background1,
     Layer_Background2,
@@ -37,12 +37,12 @@ typedef enum {
     Layer_Ui,
     Layer_Debug,
     Layer_Count
-} Layer;
+};
 
-typedef enum {
+ENUM(CollisionGroup, u16) {
     CollisionGroup_None,
     CollisionGroup_Centipede = BIT(1),
-} CollisionGroup;
+};
 
 STRUCT(Entity) {
     str name;
@@ -53,12 +53,13 @@ STRUCT(Entity) {
 
     Transform local, world;
 
-    // tehse both belong together i guess
+    // TODO: probably split into Drawable, Sprite, Text
     struct {
         SpriteId id;
         Layer layer;
-        str text;
+        f32 opacity;
         f32 text_size;
+        str text;
         vec4s tint;
     } sprite;
 

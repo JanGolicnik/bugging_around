@@ -42,10 +42,10 @@ bool scene_next_entity(Scene* scene, EntityIter* iter) {
     return false;
 }
 
-typedef enum {
+ENUM(EntityTransformUpdate) {
     ETU_LOCAL,
     ETU_WORLD,
-} EntityTransformUpdate;
+};
 
 Transform transform_calculate_world(Transform parent, Transform local) {
     return (Transform) {
@@ -125,7 +125,7 @@ EntityHandle _scene_create_entity(Scene* scene, EntityHandle handle) {
 
     if (entity_has(entity, CT_Sprite))
     {
-        if (entity->sprite.text_size == 0.0f) entity->sprite.text_size = 64.0f;
+        if (entity->sprite.text_size == 0.0f) entity->sprite.text_size = FONT_BASE_SIZE;
         if (vec4_norm2(entity->sprite.tint) == 0.0f) entity->sprite.tint = VEC4_ONE;
     }
 

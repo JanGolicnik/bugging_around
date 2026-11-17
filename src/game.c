@@ -514,6 +514,10 @@ void game_tick(void)
     RIPPLE( FORM( .width = FROM_CHILD, .height = FROM_CHILD), RECT( .color = RIPPLE_RGBA(0x2e2e2ebf), .radiusBR = .15f ) )
     {
         game_update();
+
+        slider("param1", &draw.param1, -1.0f, 1.0f, game.mem.frame);
+        slider("param2", &draw.param2, -1.0f, 1.0f, game.mem.frame);
+        slider("param3", &draw.param3, -1.0f, 1.0f, game.mem.frame);
     }
 
     // game_print_tree(scene_get_entity(game.scene, game.scene->root), 0);

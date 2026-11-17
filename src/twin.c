@@ -3,7 +3,7 @@
 
 #define MAX_TWEENS 1024
 
-typedef enum {
+ENUM(TweenFlags, u8) {
     Tween_Playing = BIT(0),
     Tween_From = BIT(1),
     Tween_Relative = BIT(2),
@@ -11,7 +11,7 @@ typedef enum {
     Tween_Delete = BIT(4),
     Tween_Local = BIT(5),
     Tween_World = BIT(6),
-} TweenFlags;
+};
 
 typedef struct {
     EntityHandle target;
